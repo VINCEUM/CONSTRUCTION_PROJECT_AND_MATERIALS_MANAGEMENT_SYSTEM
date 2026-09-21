@@ -4,7 +4,7 @@ Two versions of this system existed:
 
 | | Location | Shape |
 |---|---|---|
-| **Ours** | `CCE 106/app` | .NET 9, two projects (Core + App), MySQL `construction_mms` — 25 tables, ledger, 3 reporting views |
+| **Ours** | `IT13/app` | .NET 9, two projects (Core + App), MySQL `construction_mms` — 25 tables, ledger, 3 reporting views |
 | **Teammate's** | `source/repos/…/ConstructionPMS_IT13FinalProject` | .NET 8, one project, MySQL `construction_pms` — 6 tables |
 
 Ours is the base; theirs contributed the screens we were missing. Their original

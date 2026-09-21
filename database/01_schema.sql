@@ -1,6 +1,6 @@
 -- ============================================================================
 --  Construction Project and Materials Management System (CPMMS)
---  CCE 106 · Database schema · MySQL 8.0
+--  IT13 · Database schema · MySQL 8.0
 --
 --  Design principles
 --   1. inventory_transactions is the SINGLE SOURCE OF TRUTH for stock.

@@ -1,5 +1,5 @@
 # Construction Project and Materials Management System (CPMMS)
-CCE 106 · C# / .NET 9 WinForms · MySQL 8
+IT13 · C# / .NET 9 WinForms · MySQL 8
 
 Tracks what a construction project **planned** to consume against what it **actually**
 consumed, through the full paper trail: request → purchase order → delivery → issuance →
@@ -8,7 +8,7 @@ return → physical count.
 ## Where things are
 
 ```
-CCE 106/
+IT13/
 ├── database/
 │   ├── 01_schema.sql     25 tables, 3 reporting views, all constraints
 │   └── 02_seed.sql       demo data: 3 projects, 20 materials, a full purchase cycle
@@ -39,11 +39,11 @@ negative" guarantee.
 From a terminal instead:
 
 ```bash
-mysql -u root -p < "D:/RESEARCH PAPER/CCE 106/database/01_schema.sql"
+mysql -u root -p < "D:/RESEARCH PAPER/IT13/database/01_schema.sql"
 ```
 
 ```bash
-mysql -u root -p < "D:/RESEARCH PAPER/CCE 106/database/02_seed.sql"
+mysql -u root -p < "D:/RESEARCH PAPER/IT13/database/02_seed.sql"
 ```
 
 **3. Verify it.** These two must each return **zero rows** — they are the schema's self-test:
@@ -118,7 +118,7 @@ app/
 project, press F5. Or from a terminal:
 
 ```bash
-dotnet run --project "D:/RESEARCH PAPER/CCE 106/app/CPMMS.App"
+dotnet run --project "D:/RESEARCH PAPER/IT13/app/CPMMS.App"
 ```
 
 Set your MySQL root password in `app/CPMMS.App/appsettings.json` — the file ships with a

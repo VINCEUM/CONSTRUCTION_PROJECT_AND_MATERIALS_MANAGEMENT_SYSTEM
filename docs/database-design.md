@@ -1,6 +1,6 @@
 # Database Design
 ### Construction Project and Materials Management System (CPMMS)
-CCE 106 · MySQL 8.0 · InnoDB · utf8mb4
+IT13 · MySQL 8.0 · InnoDB · utf8mb4
 
 ---
 
