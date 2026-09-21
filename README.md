@@ -9,9 +9,8 @@ return → physical count.
 
 ```
 IT13/
-├── database/
-│   ├── 01_schema.sql     25 tables, 3 reporting views, all constraints
-│   └── 02_seed.sql       demo data: 3 projects, 20 materials, a full purchase cycle
+├── database_schema.sql  25 tables, 3 reporting views, all constraints
+├── database_seed.sql    demo data: 3 projects, 20 materials, a full purchase cycle
 ├── docs/
 │   └── database-design.md   ERDs, table dictionary, business rules, normalization
 ├── app/                     the WinForms application (see below)
@@ -34,16 +33,16 @@ silently ignored before that version, which would quietly void the "stock can ne
 negative" guarantee.
 
 **2. Import the schema and data.** In MySQL Workbench: *File → Open SQL Script*, open
-`01_schema.sql`, click the lightning bolt. Repeat for `02_seed.sql`.
+`database_schema.sql`, click the lightning bolt. Repeat for `database_seed.sql`.
 
 From a terminal instead:
 
 ```bash
-mysql -u root -p < "D:/RESEARCH PAPER/IT13/database/01_schema.sql"
+mysql -u root -p < "D:/RESEARCH PAPER/IT13/database_schema.sql"
 ```
 
 ```bash
-mysql -u root -p < "D:/RESEARCH PAPER/IT13/database/02_seed.sql"
+mysql -u root -p < "D:/RESEARCH PAPER/IT13/database_seed.sql"
 ```
 
 **3. Verify it.** These two must each return **zero rows** — they are the schema's self-test:
