@@ -114,6 +114,7 @@ public class MaterialRequest
     public string Status { get; set; } = "pending";
     public int? ApprovedBy { get; set; }
     public DateTime? ApprovedAt { get; set; }
+    public string? RejectReason { get; set; }
     public string? Remarks { get; set; }
     public string ProjectName { get; set; } = "";
     public string RequesterName { get; set; } = "";

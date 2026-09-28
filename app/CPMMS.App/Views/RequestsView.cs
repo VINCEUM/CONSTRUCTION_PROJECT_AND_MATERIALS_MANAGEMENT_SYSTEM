@@ -9,7 +9,10 @@ public sealed class RequestsView : UserControl
     private readonly DataGridView _requests = UiKit.Grid();
     private readonly DataGridView _items = UiKit.Grid();
     private readonly ComboBox _status = new();
+    private readonly ApprovalService _approvals = new();
     private readonly Button _issue;
+    private readonly Button _approve;
+    private readonly Button _reject;
 
     public RequestsView()
     {
@@ -33,6 +36,28 @@ public sealed class RequestsView : UserControl
         _issue.Location = new Point(212, 7);
         _issue.Click += (_, _) => IssueMaterials();
 
+        // approving is an admin job (storekeepers and engineers never see these)
+        var canDecide = AppSession.CurrentUser?.IsAdmin == true;
+        var next = _issue.Left + _issue.GetPreferredSize(Size.Empty).Width + 8;
+
+        _approve = UiKit.Secondary("Approve");
+        _approve.ForeColor = Theme.Accent;
+        _approve.FlatAppearance.BorderColor = Theme.Accent;
+        _approve.Location = new Point(next, 7);
+        _approve.Visible = canDecide;
+        _approve.Enabled = false;
+        _approve.Click += (_, _) => ApproveSelected();
+
+        _reject = UiKit.Secondary("Reject…");
+        _reject.ForeColor = Theme.Danger;
+        _reject.FlatAppearance.BorderColor = Theme.Danger;
+        _reject.Location = new Point(next + _approve.GetPreferredSize(Size.Empty).Width + 8, 7);
+        _reject.Visible = canDecide;
+        _reject.Enabled = false;
+        _reject.Click += (_, _) => RejectSelected();
+
+        bar.Controls.Add(_reject);
+        bar.Controls.Add(_approve);
         bar.Controls.Add(_issue);
         bar.Controls.Add(_status);
 
@@ -45,7 +70,7 @@ public sealed class RequestsView : UserControl
 
         // --- master (fills) ---------------------------------------------------
         var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        _requests.SelectionChanged += (_, _) => LoadItems();
+        _requests.SelectionChanged += (_, _) => { LoadItems(); UpdateDecisionButtons(); };
         _requests.CellFormatting += FormatRequest;
         _requests.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) IssueMaterials(); };
         _items.CellFormatting += FormatItem;
@@ -71,9 +96,85 @@ public sealed class RequestsView : UserControl
             ("RequestDate", "DATE", "d"),
             ("NeededDate", "NEEDED", "d"),
             ("Status", "STATUS", null),
-            ("Remarks", "REMARKS", null));
+            ("Remarks", "REMARKS", null),
+            ("RejectReason", "REJECT REASON", null));
 
         LoadItems();
+    }
+
+    /// <summary>Approve / Reject only make sense for a request that is still pending.</summary>
+    private void UpdateDecisionButtons()
+    {
+        var pending = _requests.CurrentRow?.DataBoundItem is MaterialRequest { Status: "pending" };
+        _approve.Enabled = pending;
+        _reject.Enabled = pending;
+    }
+
+    private void ApproveSelected()
+    {
+        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+
+        if (MessageBox.Show(this,
+                $"Approve {request.RequestNo} for {request.ProjectName}?\n\n"
+                + "The storekeeper will then be able to issue the materials.",
+                "Approve request", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+        try
+        {
+            _approvals.ApproveRequest(request.Id, AppSession.Require);
+            AfterDecision(request.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Could not approve", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    private void RejectSelected()
+    {
+        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+
+        using var editor = new RecordEditor($"Reject {request.RequestNo}",
+            new List<FieldSpec>
+            {
+                new() { Key="reason", Label="Reason for rejecting", Kind=FieldKind.Multiline,
+                        Hint="Required. It is shown next to the request so the engineer knows what to fix." }
+            },
+            saveText: "Reject");
+
+        if (editor.ShowDialog(FindForm()) != DialogResult.OK) return;
+
+        var reason = editor.Text_("reason");
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            MessageBox.Show(this, "Please write a reason before rejecting.",
+                "CPMMS", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        try
+        {
+            _approvals.RejectRequest(request.Id, AppSession.Require, reason);
+            AfterDecision(request.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Could not reject", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    /// <summary>Reload, then keep the same request selected (unless the filter now hides it).</summary>
+    private void AfterDecision(int requestId)
+    {
+        LoadRequests();
+        foreach (DataGridViewRow row in _requests.Rows)
+        {
+            if (row.DataBoundItem is MaterialRequest r && r.Id == requestId)
+            {
+                _requests.CurrentCell = row.Cells[0];
+                break;
+            }
+        }
     }
 
     /// <summary>Only an approved request can be released, and only by the right role.</summary>
