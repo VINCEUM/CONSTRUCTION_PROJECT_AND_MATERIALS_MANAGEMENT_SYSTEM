@@ -78,4 +78,9 @@ public sealed class LedgerForm : Form
         Controls.Add(footer);
         Controls.Add(header);
     }
+
+    private void InitializeComponent()
+    {
+
+    }
 }

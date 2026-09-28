@@ -7,6 +7,11 @@ public sealed class DashboardView : UserControl
     private readonly CatalogService _catalog = new();
     private readonly InventoryService _inventory = new();
 
+    private void InitializeComponent()
+    {
+
+    }
+
     public DashboardView()
     {
         Dock = DockStyle.Fill;
