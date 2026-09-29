@@ -1,3 +1,4 @@
+using CPMMS.Core;
 using CPMMS.Core.Models;
 using CPMMS.Core.Services;
 
@@ -10,9 +11,13 @@ public sealed class RequestsView : UserControl
     private readonly DataGridView _items = UiKit.Grid();
     private readonly ComboBox _status = new();
     private readonly ApprovalService _approvals = new();
+    private readonly RequestService _requestSvc = new();
     private readonly Button _issue;
+    private readonly Button _new;
     private readonly Button _approve;
     private readonly Button _reject;
+    private readonly Button _submit;
+    private readonly Button _cancel;
 
     public RequestsView()
     {
@@ -27,17 +32,28 @@ public sealed class RequestsView : UserControl
         _status.Width = 200;
         _status.Items.AddRange(new object[]
         {
-            "All statuses", "pending", "approved", "partially_issued", "issued", "rejected", "cancelled"
+            "All statuses", "draft", "submitted", "approved", "partially_issued", "issued",
+            "rejected", "cancelled", "voided"
         });
         _status.SelectedIndex = 0;
         _status.SelectedIndexChanged += (_, _) => LoadRequests();
 
+        var user = AppSession.CurrentUser;
+        var canDecide = user?.IsAdmin == true;      // approving is an admin job
+        // engineers request materials — creating one needs a real database
+        var canCreate = user?.IsEngineer == true && !DemoMode.Enabled;
+
+        _new = UiKit.Secondary("New request…");
+        _new.Location = new Point(212, 7);
+        _new.Visible = canCreate;
+        _new.Click += (_, _) => NewRequest();
+
+        var afterNew = canCreate ? _new.Left + _new.GetPreferredSize(Size.Empty).Width + 8 : 212;
+
         _issue = UiKit.Secondary("Issue materials…");
-        _issue.Location = new Point(212, 7);
+        _issue.Location = new Point(afterNew, 7);
         _issue.Click += (_, _) => IssueMaterials();
 
-        // approving is an admin job (storekeepers and engineers never see these)
-        var canDecide = AppSession.CurrentUser?.IsAdmin == true;
         var next = _issue.Left + _issue.GetPreferredSize(Size.Empty).Width + 8;
 
         _approve = UiKit.Secondary("Approve");
@@ -56,9 +72,26 @@ public sealed class RequestsView : UserControl
         _reject.Enabled = false;
         _reject.Click += (_, _) => RejectSelected();
 
+        var afterReject = _reject.Left + _reject.GetPreferredSize(Size.Empty).Width + 8;
+
+        _submit = UiKit.Secondary("Submit…");
+        _submit.Location = new Point(afterReject, 7);
+        _submit.Enabled = false;
+        _submit.Click += (_, _) => SubmitSelected();
+
+        _cancel = UiKit.Secondary("Cancel…");
+        _cancel.ForeColor = Theme.Danger;
+        _cancel.FlatAppearance.BorderColor = Theme.Danger;
+        _cancel.Location = new Point(_submit.Left + _submit.GetPreferredSize(Size.Empty).Width + 8, 7);
+        _cancel.Enabled = false;
+        _cancel.Click += (_, _) => CancelSelected();
+
+        bar.Controls.Add(_cancel);
+        bar.Controls.Add(_submit);
         bar.Controls.Add(_reject);
         bar.Controls.Add(_approve);
         bar.Controls.Add(_issue);
+        bar.Controls.Add(_new);
         bar.Controls.Add(_status);
 
         // --- detail (bottom) --------------------------------------------------
@@ -102,12 +135,71 @@ public sealed class RequestsView : UserControl
         LoadItems();
     }
 
-    /// <summary>Approve / Reject only make sense for a request that is still pending.</summary>
+    /// <summary>Each action only makes sense for a request in the right status.</summary>
     private void UpdateDecisionButtons()
     {
-        var pending = _requests.CurrentRow?.DataBoundItem is MaterialRequest { Status: "pending" };
-        _approve.Enabled = pending;
-        _reject.Enabled = pending;
+        var row = _requests.CurrentRow?.DataBoundItem as MaterialRequest;
+        var user = AppSession.CurrentUser;
+
+        var submitted = row is { Status: "submitted" };
+        _approve.Enabled = submitted;
+        _reject.Enabled = submitted;
+
+        _submit.Enabled = row is { Status: "draft" } && row.RequestedBy == user?.Id;
+        _cancel.Enabled = row is { Status: "draft" or "submitted" }
+                          && (row.RequestedBy == user?.Id || user?.IsAdmin == true);
+    }
+
+    /// <summary>Opens the request builder. Draft and submit both happen through RequestService.</summary>
+    private void NewRequest()
+    {
+        using var form = new NewRequestForm();
+        if (form.ShowDialog(FindForm()) == DialogResult.OK) LoadRequests();
+    }
+
+    private void SubmitSelected()
+    {
+        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+
+        if (MessageBox.Show(this,
+                $"Submit {request.RequestNo} for approval?",
+                "Submit request", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+        try
+        {
+            _requestSvc.Submit(request.Id, AppSession.Require);
+            AfterDecision(request.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Could not submit", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    private void CancelSelected()
+    {
+        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+
+        using var editor = new RecordEditor($"Cancel {request.RequestNo}",
+            new List<FieldSpec>
+            {
+                new() { Key="reason", Label="Reason for cancelling", Kind=FieldKind.Multiline,
+                        Hint="Required. Kept on the record — nothing is deleted." }
+            },
+            saveText: "Cancel request");
+
+        if (editor.ShowDialog(FindForm()) != DialogResult.OK) return;
+
+        var reason = editor.Text_("reason");
+        try
+        {
+            _requestSvc.Cancel(request.Id, AppSession.Require, reason);
+            AfterDecision(request.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Could not cancel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     private void ApproveSelected()
@@ -209,11 +301,12 @@ public sealed class RequestsView : UserControl
 
         e.CellStyle!.ForeColor = row.Status switch
         {
-            "pending" => Theme.Warn,
+            "draft" => Theme.InkSoft,
+            "submitted" => Theme.Warn,
             "approved" => Theme.Accent,
             "issued" => Theme.Good,
             "partially_issued" => Theme.Warn,
-            "rejected" or "cancelled" => Theme.Danger,
+            "rejected" or "cancelled" or "voided" => Theme.Danger,
             _ => Theme.InkSoft
         };
     }

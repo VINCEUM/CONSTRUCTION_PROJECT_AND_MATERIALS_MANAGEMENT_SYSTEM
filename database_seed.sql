@@ -195,7 +195,7 @@ INSERT INTO material_requests (id, request_no, project_id, task_id, requested_by
  (1,'MR-2026-0001',1,2,2,'2026-09-16','2026-09-19','issued'          ,1,'2026-09-16 14:05:00','Footing pour, phase 1'),
  (2,'MR-2026-0002',1,2,2,'2026-10-02','2026-10-06','partially_issued',1,'2026-10-02 09:40:00','Column rebar and forms'),
  (3,'MR-2026-0003',2,10,3,'2026-09-28','2026-10-02','issued'         ,1,'2026-09-28 11:15:00','Second floor rewiring'),
- (4,'MR-2026-0004',1,3,2,'2026-10-14','2026-10-18','pending'         ,NULL,NULL,'Beam forms, awaiting approval');
+ (4,'MR-2026-0004',1,3,2,'2026-10-14','2026-10-18','submitted'       ,NULL,NULL,'Beam forms, awaiting approval');
 
 INSERT INTO material_request_items (request_id, material_id, qty_requested, qty_issued, remarks) VALUES
  (1, 1,120.000,120.000,NULL),

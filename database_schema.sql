@@ -182,11 +182,12 @@ CREATE TABLE material_requests (
   requested_by    INT UNSIGNED NOT NULL,
   request_date    DATE NOT NULL,
   needed_date     DATE NULL,
-  status          ENUM('pending','approved','rejected','partially_issued','issued','closed','cancelled')
-                  NOT NULL DEFAULT 'pending',
+  status          ENUM('draft','submitted','approved','rejected','partially_issued','issued','cancelled','voided')
+                  NOT NULL DEFAULT 'draft',
   approved_by     INT UNSIGNED NULL,
   approved_at     DATETIME NULL,
   reject_reason   VARCHAR(255) NULL,
+  void_reason     VARCHAR(255) NULL,
   remarks         VARCHAR(255) NULL,
   created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

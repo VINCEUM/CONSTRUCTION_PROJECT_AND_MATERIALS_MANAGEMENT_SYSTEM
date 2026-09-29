@@ -162,7 +162,7 @@ public sealed class CatalogService
                 (SELECT COUNT(*) FROM materials WHERE status = 'active')         AS material_count,
                 (SELECT COUNT(*) FROM suppliers WHERE status = 'active')         AS supplier_count,
                 (SELECT COUNT(*) FROM materials WHERE current_stock <= minimum_stock) AS low_stock_count,
-                (SELECT COUNT(*) FROM material_requests WHERE status = 'pending')     AS pending_requests,
+                (SELECT COUNT(*) FROM material_requests WHERE status = 'submitted')   AS pending_requests,
                 (SELECT COALESCE(SUM(contract_amount),0) FROM projects WHERE status IN ('ongoing','planning')) AS total_contract_value,
                 (SELECT COALESCE(SUM(current_stock * last_unit_cost),0) FROM materials) AS stock_value");
     }

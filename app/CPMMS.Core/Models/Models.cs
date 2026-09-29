@@ -111,10 +111,11 @@ public class MaterialRequest
     public int RequestedBy { get; set; }
     public DateTime RequestDate { get; set; }
     public DateTime? NeededDate { get; set; }
-    public string Status { get; set; } = "pending";
+    public string Status { get; set; } = "draft";
     public int? ApprovedBy { get; set; }
     public DateTime? ApprovedAt { get; set; }
     public string? RejectReason { get; set; }
+    public string? VoidReason { get; set; }
     public string? Remarks { get; set; }
     public string ProjectName { get; set; } = "";
     public string RequesterName { get; set; } = "";

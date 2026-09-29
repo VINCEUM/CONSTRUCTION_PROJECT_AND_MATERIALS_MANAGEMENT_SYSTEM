@@ -11,7 +11,7 @@ namespace CPMMS.Core.Services;
 /// Rules (docs/database-design.md, rule 9 - separation of duties):
 ///   * only an Admin may approve or reject
 ///   * nobody approves their own request
-///   * only a 'pending' request can be decided, and only once
+///   * only a 'submitted' request can be decided, and only once
 ///   * a rejection must carry a reason
 /// </summary>
 public sealed class ApprovalService
@@ -41,7 +41,7 @@ public sealed class ApprovalService
         {
             var demo = DemoData.Requests.FirstOrDefault(r => r.Id == requestId)
                        ?? throw new InvalidOperationException("That request no longer exists.");
-            if (demo.Status != "pending")
+            if (demo.Status != "submitted")
                 throw new InvalidOperationException($"This request is already '{demo.Status}'.");
 
             demo.Status = approve ? "approved" : "rejected";
@@ -63,7 +63,7 @@ public sealed class ApprovalService
 
             if (request.RequestNo is null)
                 throw new InvalidOperationException("That request no longer exists.");
-            if (request.Status != "pending")
+            if (request.Status != "submitted")
                 throw new InvalidOperationException(
                     $"{request.RequestNo} is already '{request.Status}', so it cannot be decided again.");
             if (request.RequestedBy == approver.Id)

@@ -119,6 +119,9 @@ public static class DemoData
         new() { Id=4, RequestNo="MR-2026-0004", ProjectId=1, ProjectName="Two-Storey Residential House",
                 RequesterName="Engr. Karla M. Dizon", RequestDate=new(2026,10,14), NeededDate=new(2026,10,18),
                 Status="approved", Remarks="Beam forms — ready to issue" },
+        new() { Id=5, RequestNo="MR-2026-0005", ProjectId=2, ProjectName="Commercial Building Renovation",
+                RequesterName="Engr. Nico P. Alcantara", RequestDate=new(2026,10,20), NeededDate=new(2026,10,24),
+                Status="submitted", Remarks="Panel board upgrade" },
     };
 
     public static readonly Dictionary<int, List<MaterialRequestItem>> RequestItems = new()
@@ -244,7 +247,7 @@ public static class DemoData
         MaterialCount = Materials.Count,
         SupplierCount = 3,
         LowStockCount = Materials.Count(m => m.CurrentStock <= m.MinimumStock),
-        PendingRequests = Requests.Count(r => r.Status == "pending" || r.Status == "approved"),
+        PendingRequests = Requests.Count(r => r.Status == "submitted"),
         TotalContractValue = Projects.Where(p => p.Status is "ongoing" or "planning").Sum(p => p.ContractAmount),
         StockValue = Materials.Sum(m => m.CurrentStock * m.LastUnitCost)
     };
