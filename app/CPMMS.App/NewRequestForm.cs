@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using CPMMS.Core.Models;
 using CPMMS.Core.Services;
 
@@ -36,6 +36,11 @@ public sealed class NewRequestForm : Form
 
     public NewRequestForm()
     {
+        // this form is built entirely in code (no Designer baseline), so let
+        // Windows' own per-monitor DPI scaling handle it — WinForms' separate
+        // font-ratio auto-scale would otherwise double up and misalign things
+        AutoScaleMode = AutoScaleMode.None;
+
         Text = "New material request";
         StartPosition = FormStartPosition.CenterParent;
         ClientSize = new Size(820, 560);
@@ -49,26 +54,28 @@ public sealed class NewRequestForm : Form
         var header = new Panel { Dock = DockStyle.Top, Height = 128, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
         var title = new Label { Text = "New material request", Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false };
 
+        // positions are computed from each label's own measured width (not a
+        // guessed pixel number), so a label can never overlap the control after it
         var fields = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblProject = new Label { Text = "Project", ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
+        var lblProject = new Label { Text = "Project", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _project.DropDownStyle = ComboBoxStyle.DropDownList;
-        _project.Location = new Point(60, 4);
+        _project.Location = new Point(lblProject.Right + 12, 4);
         _project.Width = 320;
         _project.DisplayMember = "Name";
         _project.ValueMember = "Id";
         _project.DataSource = projects;
 
-        var lblNeeded = new Label { Text = "Needed by", ForeColor = Theme.InkSoft, Location = new Point(400, 8), AutoSize = true };
+        var lblNeeded = new Label { Text = "Needed by", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_project.Right + 24, 8), AutoSize = true };
         _needed.Format = DateTimePickerFormat.Short;
-        _needed.Location = new Point(478, 4);
-        _needed.Width = 120;
+        _needed.Location = new Point(lblNeeded.Right + 12, 4);
+        _needed.Width = 160;
         _needed.Value = DateTime.Today.AddDays(3);
 
         fields.Controls.AddRange(new Control[] { lblProject, _project, lblNeeded, _needed });
 
         var remarksRow = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblRemarks = new Label { Text = "Remarks", ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _remarks.Location = new Point(60, 4);
+        var lblRemarks = new Label { Text = "Remarks", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
+        _remarks.Location = new Point(lblRemarks.Right + 12, 4);
         _remarks.Width = 538;
         _remarks.BorderStyle = BorderStyle.FixedSingle;
         _remarks.PlaceholderText = "optional — what this request is for";
@@ -139,17 +146,17 @@ public sealed class NewRequestForm : Form
             FlatStyle = FlatStyle.Flat,
             Font = new Font("Segoe UI Semibold", 9.75F),
             Height = 32,
-            Width = 160
+            Width = 200,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowOnly
         };
         submit.FlatAppearance.BorderSize = 0;
         submit.Click += (_, _) => Save(submitNow: true);
 
         var saveDraft = UiKit.Secondary("Save as draft");
-        saveDraft.Width = 120;
         saveDraft.Click += (_, _) => Save(submitNow: false);
 
         var cancel = UiKit.Secondary("Cancel");
-        cancel.Width = 90;
         cancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         buttons.Controls.Add(submit);

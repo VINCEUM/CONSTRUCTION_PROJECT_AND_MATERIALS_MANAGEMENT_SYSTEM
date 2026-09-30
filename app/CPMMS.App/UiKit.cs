@@ -12,7 +12,7 @@ public static class UiKit
             BackColor = Color.White,
             Padding = new Padding(16, 12, 16, 12),
             Margin = new Padding(0, 0, 12, 12),
-            Size = new Size(210, 96)
+            Size = new Size(240, 100)
         };
         card.Paint += (s, e) =>
         {

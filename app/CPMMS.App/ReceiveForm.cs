@@ -34,9 +34,14 @@ public sealed class ReceiveForm : Form
     {
         _po = po;
 
+        // this form is built entirely in code (no Designer baseline), so let
+        // Windows' own per-monitor DPI scaling handle it — WinForms' separate
+        // font-ratio auto-scale would otherwise double up and misalign things
+        AutoScaleMode = AutoScaleMode.None;
+
         Text = $"Receive delivery — {po.PoNo}";
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(900, 540);
+        ClientSize = new Size(1020, 540);
         BackColor = Theme.Surface;
         Font = Theme.Body;
 
@@ -69,16 +74,18 @@ public sealed class ReceiveForm : Form
         };
 
         var fields = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblDr = new Label { Text = "DR number", ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _drNo.Location = new Point(78, 4);
-        _drNo.Width = 180;
+        // positions are computed from each label's own measured width (not a
+        // guessed pixel number), so a label can never overlap the control after it
+        var lblDr = new Label { Text = "DR number", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
+        _drNo.Location = new Point(lblDr.Right + 12, 4);
+        _drNo.Width = 220;
         _drNo.BorderStyle = BorderStyle.FixedSingle;
-        _drNo.PlaceholderText = "supplier's receipt no.";
+        _drNo.PlaceholderText = "Supplier's receipt no.";
 
-        var lblDate = new Label { Text = "Delivery date", ForeColor = Theme.InkSoft, Location = new Point(280, 8), AutoSize = true };
+        var lblDate = new Label { Text = "Delivery date", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_drNo.Right + 24, 8), AutoSize = true };
         _date.Format = DateTimePickerFormat.Short;
-        _date.Location = new Point(368, 4);
-        _date.Width = 120;
+        _date.Location = new Point(lblDate.Right + 12, 4);
+        _date.Width = 160;
         _date.Value = DateTime.Today;
 
         fields.Controls.AddRange(new Control[] { lblDr, _drNo, lblDate, _date });
@@ -98,6 +105,14 @@ public sealed class ReceiveForm : Form
             ("UnitPrice", "UNIT PRICE", "N2"),
             ("QtyReceivedNow", "RECEIVING NOW", "N2"),
             ("LineTotal", "LINE TOTAL", "N2"));
+
+        var minWidths = new Dictionary<string, int>
+        {
+            ["MaterialCode"] = 80, ["MaterialName"] = 180, ["Unit"] = 65,
+            ["QtyOrdered"] = 95, ["QtyAlreadyReceived"] = 95, ["QtyOutstanding"] = 125,
+            ["UnitPrice"] = 105, ["QtyReceivedNow"] = 125, ["LineTotal"] = 115
+        };
+        foreach (var (name, width) in minWidths) _grid.Columns[name]!.MinimumWidth = width;
 
         _grid.ReadOnly = false;
         foreach (DataGridViewColumn c in _grid.Columns)
@@ -131,13 +146,14 @@ public sealed class ReceiveForm : Form
             Text = "Post delivery",
             BackColor = Theme.Accent, ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI Semibold", 9.75F),
-            Height = 32, Width = 130
+            Height = 32, Width = 130,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowOnly
         };
         post.FlatAppearance.BorderSize = 0;
         post.Click += Post;
 
         var cancel = UiKit.Secondary("Cancel");
-        cancel.Width = 90;
         cancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         buttons.Controls.Add(post);
