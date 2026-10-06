@@ -5,71 +5,37 @@ namespace CPMMS.App.Views;
 
 /// <summary>
 /// Planned against actual, per material, per project — the report the whole
-/// system exists to produce.
+/// system exists to produce. Layout is in the designer; filtering/colouring here.
 /// </summary>
-public sealed class VarianceView : UserControl
+public partial class VarianceView : UserControl
 {
     private readonly CatalogService _catalog = new();
-    private readonly DataGridView _grid = UiKit.Grid();
-    private readonly ComboBox _project = new();
-    private readonly CheckBox _overrunsOnly = new();
-    private readonly Label _summary = new();
 
     public VarianceView()
     {
-        Dock = DockStyle.Fill;
-        BackColor = Theme.Surface;
+        InitializeComponent();
+        Theme.Style(grid);
 
-        var bar = new Panel { Dock = DockStyle.Top, Height = 46, BackColor = Theme.Surface };
-
-        _project.DropDownStyle = ComboBoxStyle.DropDownList;
-        _project.Font = Theme.Body;
-        _project.Location = new Point(0, 8);
-        _project.Width = 300;
-        _project.DisplayMember = "Name";
-        _project.ValueMember = "Id";
-        _project.Items.Add(new ProjectOption(0, "All projects"));
+        cmbProject.DisplayMember = "Name";
+        cmbProject.ValueMember = "Id";
+        cmbProject.Items.Add(new ProjectOption(0, "All projects"));
         foreach (var p in _catalog.GetProjects())
-            _project.Items.Add(new ProjectOption(p.Id, $"{p.Code} — {p.Name}"));
-        _project.SelectedIndex = 0;
-        _project.SelectedIndexChanged += (_, _) => Reload();
-
-        _overrunsOnly.Text = "Overruns only (over 10%)";
-        _overrunsOnly.Font = Theme.Body;
-        _overrunsOnly.ForeColor = Theme.InkSoft;
-        _overrunsOnly.Location = new Point(316, 11);
-        _overrunsOnly.AutoSize = true;
-        _overrunsOnly.CheckedChanged += (_, _) => Reload();
-
-        _summary.ForeColor = Theme.Muted;
-        _summary.Font = Theme.Small;
-        _summary.AutoSize = false;
-        _summary.Location = new Point(530, 14);
-        _summary.Size = new Size(420, 20);
-
-        bar.Controls.Add(_summary);
-        bar.Controls.Add(_overrunsOnly);
-        bar.Controls.Add(_project);
-
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        _grid.CellFormatting += Colourise;
-        host.Controls.Add(_grid);
-
-        Controls.Add(host);
-        Controls.Add(bar);
-
-        Reload();
+            cmbProject.Items.Add(new ProjectOption(p.Id, $"{p.Code} — {p.Name}"));
+        cmbProject.SelectedIndex = 0;   // triggers the first Reload
     }
+
+    private void cmbProject_SelectedIndexChanged(object? sender, EventArgs e) => Reload();
+    private void chkOverruns_CheckedChanged(object? sender, EventArgs e) => Reload();
 
     private void Reload()
     {
-        var option = _project.SelectedItem as ProjectOption;
+        var option = cmbProject.SelectedItem as ProjectOption;
         int? projectId = option is null || option.Id == 0 ? null : option.Id;
-        decimal? minPercent = _overrunsOnly.Checked ? 10m : null;
+        decimal? minPercent = chkOverruns.Checked ? 10m : null;
 
         var rows = _catalog.GetVariance(projectId, minPercent);
 
-        UiKit.Bind(_grid, rows,
+        UiKit.Bind(grid, rows,
             ("ProjectCode", "PROJECT", null),
             ("MaterialName", "MATERIAL", null),
             ("Unit", "UNIT", null),
@@ -83,13 +49,13 @@ public sealed class VarianceView : UserControl
 
         var overruns = rows.Count(r => r.VariancePercent > 10);
         var overspend = rows.Where(r => r.CostVariance > 0).Sum(r => r.CostVariance);
-        _summary.Text = $"{rows.Count} line(s)  ·  {overruns} over 10%  ·  ₱{overspend:N0} above plan";
+        lblSummary.Text = $"{rows.Count} line(s)  ·  {overruns} over 10%  ·  ₱{overspend:N0} above plan";
     }
 
-    private void Colourise(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void grid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
-        if (e.RowIndex < 0 || _grid.Rows[e.RowIndex].DataBoundItem is not VarianceRow row) return;
-        var column = _grid.Columns[e.ColumnIndex].Name;
+        if (e.RowIndex < 0 || grid.Rows[e.RowIndex].DataBoundItem is not VarianceRow row) return;
+        var column = grid.Columns[e.ColumnIndex].Name;
 
         if (column is "QtyVariance" or "VariancePercent" or "CostVariance")
         {

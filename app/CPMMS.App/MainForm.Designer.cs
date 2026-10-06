@@ -14,6 +14,14 @@ namespace CPMMS.App
         {
             this.panelNav = new System.Windows.Forms.Panel();
             this.panelNavItems = new System.Windows.Forms.Panel();
+            this.btnDashboard = new System.Windows.Forms.Button();
+            this.btnProjects = new System.Windows.Forms.Button();
+            this.btnMaterials = new System.Windows.Forms.Button();
+            this.btnRequests = new System.Windows.Forms.Button();
+            this.btnPurchaseOrders = new System.Windows.Forms.Button();
+            this.btnVariance = new System.Windows.Forms.Button();
+            this.btnSuppliers = new System.Windows.Forms.Button();
+            this.btnUsers = new System.Windows.Forms.Button();
             this.lblNavBrand = new System.Windows.Forms.Label();
             this.panelHeader = new System.Windows.Forms.Panel();
             this.btnSignOut = new System.Windows.Forms.Button();
@@ -21,6 +29,7 @@ namespace CPMMS.App
             this.lblHeading = new System.Windows.Forms.Label();
             this.panelContent = new System.Windows.Forms.Panel();
             this.panelNav.SuspendLayout();
+            this.panelNavItems.SuspendLayout();
             this.panelHeader.SuspendLayout();
             this.SuspendLayout();
             //
@@ -51,12 +60,164 @@ namespace CPMMS.App
             //
             // panelNavItems
             //
+            this.panelNavItems.Controls.Add(this.btnUsers);
+            this.panelNavItems.Controls.Add(this.btnSuppliers);
+            this.panelNavItems.Controls.Add(this.btnVariance);
+            this.panelNavItems.Controls.Add(this.btnPurchaseOrders);
+            this.panelNavItems.Controls.Add(this.btnRequests);
+            this.panelNavItems.Controls.Add(this.btnMaterials);
+            this.panelNavItems.Controls.Add(this.btnProjects);
+            this.panelNavItems.Controls.Add(this.btnDashboard);
             this.panelNavItems.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelNavItems.Location = new System.Drawing.Point(0, 78);
             this.panelNavItems.Name = "panelNavItems";
             this.panelNavItems.Padding = new System.Windows.Forms.Padding(10, 6, 10, 10);
             this.panelNavItems.Size = new System.Drawing.Size(224, 642);
             this.panelNavItems.TabIndex = 1;
+            //
+            // btnDashboard
+            //
+            this.btnDashboard.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnDashboard.FlatAppearance.BorderSize = 0;
+            this.btnDashboard.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnDashboard.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDashboard.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnDashboard.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnDashboard.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnDashboard.Location = new System.Drawing.Point(10, 300);
+            this.btnDashboard.Name = "btnDashboard";
+            this.btnDashboard.Size = new System.Drawing.Size(204, 42);
+            this.btnDashboard.TabIndex = 0;
+            this.btnDashboard.Text = "   Dashboard";
+            this.btnDashboard.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnDashboard.UseVisualStyleBackColor = false;
+            this.btnDashboard.Click += new System.EventHandler(this.btnDashboard_Click);
+            //
+            // btnProjects
+            //
+            this.btnProjects.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnProjects.FlatAppearance.BorderSize = 0;
+            this.btnProjects.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnProjects.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnProjects.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnProjects.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnProjects.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnProjects.Location = new System.Drawing.Point(10, 258);
+            this.btnProjects.Name = "btnProjects";
+            this.btnProjects.Size = new System.Drawing.Size(204, 42);
+            this.btnProjects.TabIndex = 1;
+            this.btnProjects.Text = "   Projects";
+            this.btnProjects.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnProjects.UseVisualStyleBackColor = false;
+            this.btnProjects.Click += new System.EventHandler(this.btnProjects_Click);
+            //
+            // btnMaterials
+            //
+            this.btnMaterials.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnMaterials.FlatAppearance.BorderSize = 0;
+            this.btnMaterials.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnMaterials.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnMaterials.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnMaterials.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnMaterials.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnMaterials.Location = new System.Drawing.Point(10, 216);
+            this.btnMaterials.Name = "btnMaterials";
+            this.btnMaterials.Size = new System.Drawing.Size(204, 42);
+            this.btnMaterials.TabIndex = 2;
+            this.btnMaterials.Text = "   Materials";
+            this.btnMaterials.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnMaterials.UseVisualStyleBackColor = false;
+            this.btnMaterials.Click += new System.EventHandler(this.btnMaterials_Click);
+            //
+            // btnRequests
+            //
+            this.btnRequests.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnRequests.FlatAppearance.BorderSize = 0;
+            this.btnRequests.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnRequests.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnRequests.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnRequests.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnRequests.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnRequests.Location = new System.Drawing.Point(10, 174);
+            this.btnRequests.Name = "btnRequests";
+            this.btnRequests.Size = new System.Drawing.Size(204, 42);
+            this.btnRequests.TabIndex = 3;
+            this.btnRequests.Text = "   Material Requests";
+            this.btnRequests.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnRequests.UseVisualStyleBackColor = false;
+            this.btnRequests.Click += new System.EventHandler(this.btnRequests_Click);
+            //
+            // btnPurchaseOrders
+            //
+            this.btnPurchaseOrders.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnPurchaseOrders.FlatAppearance.BorderSize = 0;
+            this.btnPurchaseOrders.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnPurchaseOrders.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnPurchaseOrders.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnPurchaseOrders.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnPurchaseOrders.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnPurchaseOrders.Location = new System.Drawing.Point(10, 132);
+            this.btnPurchaseOrders.Name = "btnPurchaseOrders";
+            this.btnPurchaseOrders.Size = new System.Drawing.Size(204, 42);
+            this.btnPurchaseOrders.TabIndex = 4;
+            this.btnPurchaseOrders.Text = "   Purchase Orders";
+            this.btnPurchaseOrders.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnPurchaseOrders.UseVisualStyleBackColor = false;
+            this.btnPurchaseOrders.Click += new System.EventHandler(this.btnPurchaseOrders_Click);
+            //
+            // btnVariance
+            //
+            this.btnVariance.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnVariance.FlatAppearance.BorderSize = 0;
+            this.btnVariance.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnVariance.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnVariance.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnVariance.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnVariance.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnVariance.Location = new System.Drawing.Point(10, 90);
+            this.btnVariance.Name = "btnVariance";
+            this.btnVariance.Size = new System.Drawing.Size(204, 42);
+            this.btnVariance.TabIndex = 5;
+            this.btnVariance.Text = "   Variance Report";
+            this.btnVariance.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnVariance.UseVisualStyleBackColor = false;
+            this.btnVariance.Click += new System.EventHandler(this.btnVariance_Click);
+            //
+            // btnSuppliers
+            //
+            this.btnSuppliers.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnSuppliers.FlatAppearance.BorderSize = 0;
+            this.btnSuppliers.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnSuppliers.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSuppliers.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnSuppliers.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnSuppliers.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnSuppliers.Location = new System.Drawing.Point(10, 48);
+            this.btnSuppliers.Name = "btnSuppliers";
+            this.btnSuppliers.Size = new System.Drawing.Size(204, 42);
+            this.btnSuppliers.TabIndex = 6;
+            this.btnSuppliers.Text = "   Suppliers";
+            this.btnSuppliers.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnSuppliers.UseVisualStyleBackColor = false;
+            this.btnSuppliers.Click += new System.EventHandler(this.btnSuppliers_Click);
+            //
+            // btnUsers
+            //
+            this.btnUsers.Dock = System.Windows.Forms.DockStyle.Top;
+            this.btnUsers.FlatAppearance.BorderSize = 0;
+            this.btnUsers.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(34, 58, 68);
+            this.btnUsers.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnUsers.Font = new System.Drawing.Font("Segoe UI", 9.75F);
+            this.btnUsers.ForeColor = System.Drawing.Color.FromArgb(203, 218, 222);
+            this.btnUsers.BackColor = System.Drawing.Color.FromArgb(22, 38, 46);
+            this.btnUsers.Location = new System.Drawing.Point(10, 6);
+            this.btnUsers.Name = "btnUsers";
+            this.btnUsers.Size = new System.Drawing.Size(204, 42);
+            this.btnUsers.TabIndex = 7;
+            this.btnUsers.Text = "   Users";
+            this.btnUsers.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnUsers.UseVisualStyleBackColor = false;
+            this.btnUsers.Click += new System.EventHandler(this.btnUsers_Click);
             //
             // panelHeader
             //
@@ -132,6 +293,7 @@ namespace CPMMS.App
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.panelNav.ResumeLayout(false);
+            this.panelNavItems.ResumeLayout(false);
             this.panelHeader.ResumeLayout(false);
             this.panelHeader.PerformLayout();
             this.ResumeLayout(false);
@@ -140,6 +302,14 @@ namespace CPMMS.App
         private System.Windows.Forms.Panel panelNav;
         private System.Windows.Forms.Label lblNavBrand;
         private System.Windows.Forms.Panel panelNavItems;
+        private System.Windows.Forms.Button btnDashboard;
+        private System.Windows.Forms.Button btnProjects;
+        private System.Windows.Forms.Button btnMaterials;
+        private System.Windows.Forms.Button btnRequests;
+        private System.Windows.Forms.Button btnPurchaseOrders;
+        private System.Windows.Forms.Button btnVariance;
+        private System.Windows.Forms.Button btnSuppliers;
+        private System.Windows.Forms.Button btnUsers;
         private System.Windows.Forms.Panel panelHeader;
         private System.Windows.Forms.Label lblHeading;
         private System.Windows.Forms.Label lblUser;

@@ -4,125 +4,51 @@ using CPMMS.Core.Services;
 
 namespace CPMMS.App.Views;
 
-public sealed class RequestsView : UserControl
+/// <summary>
+/// Material requests: a master list, the requested items below, and the actions
+/// (new, issue, approve, reject, submit, cancel). Layout is in the designer;
+/// the data and the actions are here.
+/// </summary>
+public partial class RequestsView : UserControl
 {
     private readonly CatalogService _catalog = new();
-    private readonly DataGridView _requests = UiKit.Grid();
-    private readonly DataGridView _items = UiKit.Grid();
-    private readonly ComboBox _status = new();
     private readonly ApprovalService _approvals = new();
     private readonly RequestService _requestSvc = new();
-    private readonly Button _issue;
-    private readonly Button _new;
-    private readonly Button _approve;
-    private readonly Button _reject;
-    private readonly Button _submit;
-    private readonly Button _cancel;
 
     public RequestsView()
     {
-        Dock = DockStyle.Fill;
-        BackColor = Theme.Surface;
-
-        // --- filter ----------------------------------------------------------
-        var bar = new Panel { Dock = DockStyle.Top, Height = 44, BackColor = Theme.Surface };
-        _status.DropDownStyle = ComboBoxStyle.DropDownList;
-        _status.Font = Theme.Body;
-        _status.Location = new Point(0, 8);
-        _status.Width = 200;
-        _status.Items.AddRange(new object[]
-        {
-            "All statuses", "draft", "submitted", "approved", "partially_issued", "issued",
-            "rejected", "cancelled", "voided"
-        });
-        _status.SelectedIndex = 0;
-        _status.SelectedIndexChanged += (_, _) => LoadRequests();
+        InitializeComponent();
+        Theme.Style(gridRequests);
+        Theme.Style(gridItems);
 
         var user = AppSession.CurrentUser;
-        var canDecide = user?.IsAdmin == true;      // approving is an admin job
+        btnApprove.Visible = user?.IsAdmin == true;      // approving is an admin job
+        btnReject.Visible = user?.IsAdmin == true;
         // engineers request materials — creating one needs a real database
-        var canCreate = user?.IsEngineer == true && !DemoMode.Enabled;
+        btnNew.Visible = user?.IsEngineer == true && !DemoMode.Enabled;
 
-        _new = UiKit.Secondary("New request…");
-        _new.Location = new Point(212, 7);
-        _new.Visible = canCreate;
-        _new.Click += (_, _) => NewRequest();
-
-        var afterNew = canCreate ? _new.Left + _new.GetPreferredSize(Size.Empty).Width + 8 : 212;
-
-        _issue = UiKit.Secondary("Issue materials…");
-        _issue.Location = new Point(afterNew, 7);
-        _issue.Click += (_, _) => IssueMaterials();
-
-        var next = _issue.Left + _issue.GetPreferredSize(Size.Empty).Width + 8;
-
-        _approve = UiKit.Secondary("Approve");
-        _approve.ForeColor = Theme.Accent;
-        _approve.FlatAppearance.BorderColor = Theme.Accent;
-        _approve.Location = new Point(next, 7);
-        _approve.Visible = canDecide;
-        _approve.Enabled = false;
-        _approve.Click += (_, _) => ApproveSelected();
-
-        _reject = UiKit.Secondary("Reject…");
-        _reject.ForeColor = Theme.Danger;
-        _reject.FlatAppearance.BorderColor = Theme.Danger;
-        _reject.Location = new Point(next + _approve.GetPreferredSize(Size.Empty).Width + 8, 7);
-        _reject.Visible = canDecide;
-        _reject.Enabled = false;
-        _reject.Click += (_, _) => RejectSelected();
-
-        var afterReject = _reject.Left + _reject.GetPreferredSize(Size.Empty).Width + 8;
-
-        _submit = UiKit.Secondary("Submit…");
-        _submit.Location = new Point(afterReject, 7);
-        _submit.Enabled = false;
-        _submit.Click += (_, _) => SubmitSelected();
-
-        _cancel = UiKit.Secondary("Cancel…");
-        _cancel.ForeColor = Theme.Danger;
-        _cancel.FlatAppearance.BorderColor = Theme.Danger;
-        _cancel.Location = new Point(_submit.Left + _submit.GetPreferredSize(Size.Empty).Width + 8, 7);
-        _cancel.Enabled = false;
-        _cancel.Click += (_, _) => CancelSelected();
-
-        bar.Controls.Add(_cancel);
-        bar.Controls.Add(_submit);
-        bar.Controls.Add(_reject);
-        bar.Controls.Add(_approve);
-        bar.Controls.Add(_issue);
-        bar.Controls.Add(_new);
-        bar.Controls.Add(_status);
-
-        // --- detail (bottom) --------------------------------------------------
-        var detail = new Panel { Dock = DockStyle.Bottom, Height = 240, BackColor = Theme.Surface, Padding = new Padding(0, 8, 0, 0) };
-        var detailHost = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        detailHost.Controls.Add(_items);
-        detail.Controls.Add(detailHost);
-        detail.Controls.Add(UiKit.SectionTitle("Requested items"));
-
-        // --- master (fills) ---------------------------------------------------
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        _requests.SelectionChanged += (_, _) => { LoadItems(); UpdateDecisionButtons(); };
-        _requests.CellFormatting += FormatRequest;
-        _requests.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) IssueMaterials(); };
-        _items.CellFormatting += FormatItem;
-        host.Controls.Add(_requests);
-
-        Controls.Add(host);
-        Controls.Add(detail);
-        Controls.Add(bar);
-
-        LoadRequests();
+        cmbStatus.SelectedIndex = 0;   // triggers the first LoadRequests
     }
+
+    // ---- toolbar handlers ---------------------------------------------------
+    private void cmbStatus_SelectedIndexChanged(object? sender, EventArgs e) => LoadRequests();
+    private void btnNew_Click(object? sender, EventArgs e) => NewRequest();
+    private void btnIssue_Click(object? sender, EventArgs e) => IssueMaterials();
+    private void btnApprove_Click(object? sender, EventArgs e) => ApproveSelected();
+    private void btnReject_Click(object? sender, EventArgs e) => RejectSelected();
+    private void btnSubmit_Click(object? sender, EventArgs e) => SubmitSelected();
+    private void btnCancel_Click(object? sender, EventArgs e) => CancelSelected();
+
+    private void gridRequests_SelectionChanged(object? sender, EventArgs e) { LoadItems(); UpdateDecisionButtons(); }
+    private void gridRequests_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) { if (e.RowIndex >= 0) IssueMaterials(); }
 
     private void LoadRequests()
     {
-        var status = _status.SelectedIndex <= 0 ? null : _status.SelectedItem?.ToString();
+        var status = cmbStatus.SelectedIndex <= 0 ? null : cmbStatus.SelectedItem?.ToString();
         var rows = _catalog.GetRequests(status);
-        _issue.Enabled = rows.Count > 0;
+        btnIssue.Enabled = rows.Count > 0;
 
-        UiKit.Bind(_requests, rows,
+        UiKit.Bind(gridRequests, rows,
             ("RequestNo", "REQUEST NO.", null),
             ("ProjectName", "PROJECT", null),
             ("RequesterName", "REQUESTED BY", null),
@@ -138,15 +64,15 @@ public sealed class RequestsView : UserControl
     /// <summary>Each action only makes sense for a request in the right status.</summary>
     private void UpdateDecisionButtons()
     {
-        var row = _requests.CurrentRow?.DataBoundItem as MaterialRequest;
+        var row = gridRequests.CurrentRow?.DataBoundItem as MaterialRequest;
         var user = AppSession.CurrentUser;
 
         var submitted = row is { Status: "submitted" };
-        _approve.Enabled = submitted;
-        _reject.Enabled = submitted;
+        btnApprove.Enabled = submitted;
+        btnReject.Enabled = submitted;
 
-        _submit.Enabled = row is { Status: "draft" } && row.RequestedBy == user?.Id;
-        _cancel.Enabled = row is { Status: "draft" or "submitted" }
+        btnSubmit.Enabled = row is { Status: "draft" } && row.RequestedBy == user?.Id;
+        btnCancel.Enabled = row is { Status: "draft" or "submitted" }
                           && (row.RequestedBy == user?.Id || user?.IsAdmin == true);
     }
 
@@ -159,7 +85,7 @@ public sealed class RequestsView : UserControl
 
     private void SubmitSelected()
     {
-        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+        if (gridRequests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
 
         if (MessageBox.Show(this,
                 $"Submit {request.RequestNo} for approval?",
@@ -178,7 +104,7 @@ public sealed class RequestsView : UserControl
 
     private void CancelSelected()
     {
-        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+        if (gridRequests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
 
         using var editor = new RecordEditor($"Cancel {request.RequestNo}",
             new List<FieldSpec>
@@ -204,7 +130,7 @@ public sealed class RequestsView : UserControl
 
     private void ApproveSelected()
     {
-        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+        if (gridRequests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
 
         if (MessageBox.Show(this,
                 $"Approve {request.RequestNo} for {request.ProjectName}?\n\n"
@@ -224,7 +150,7 @@ public sealed class RequestsView : UserControl
 
     private void RejectSelected()
     {
-        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+        if (gridRequests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
 
         using var editor = new RecordEditor($"Reject {request.RequestNo}",
             new List<FieldSpec>
@@ -259,11 +185,11 @@ public sealed class RequestsView : UserControl
     private void AfterDecision(int requestId)
     {
         LoadRequests();
-        foreach (DataGridViewRow row in _requests.Rows)
+        foreach (DataGridViewRow row in gridRequests.Rows)
         {
             if (row.DataBoundItem is MaterialRequest r && r.Id == requestId)
             {
-                _requests.CurrentCell = row.Cells[0];
+                gridRequests.CurrentCell = row.Cells[0];
                 break;
             }
         }
@@ -272,7 +198,7 @@ public sealed class RequestsView : UserControl
     /// <summary>Only an approved request can be released, and only by the right role.</summary>
     private void IssueMaterials()
     {
-        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+        if (gridRequests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
 
         var user = AppSession.Require;
         if (!(user.IsStorekeeper || user.IsAdmin))
@@ -294,10 +220,10 @@ public sealed class RequestsView : UserControl
         if (form.ShowDialog(FindForm()) == DialogResult.OK) LoadRequests();
     }
 
-    private void FormatRequest(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void gridRequests_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
-        if (e.RowIndex < 0 || _requests.Rows[e.RowIndex].DataBoundItem is not MaterialRequest row) return;
-        if (_requests.Columns[e.ColumnIndex].Name != "Status") return;
+        if (e.RowIndex < 0 || gridRequests.Rows[e.RowIndex].DataBoundItem is not MaterialRequest row) return;
+        if (gridRequests.Columns[e.ColumnIndex].Name != "Status") return;
 
         e.CellStyle!.ForeColor = row.Status switch
         {
@@ -311,10 +237,10 @@ public sealed class RequestsView : UserControl
         };
     }
 
-    private void FormatItem(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void gridItems_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
-        if (e.RowIndex < 0 || _items.Rows[e.RowIndex].DataBoundItem is not MaterialRequestItem item) return;
-        var column = _items.Columns[e.ColumnIndex].Name;
+        if (e.RowIndex < 0 || gridItems.Rows[e.RowIndex].DataBoundItem is not MaterialRequestItem item) return;
+        var column = gridItems.Columns[e.ColumnIndex].Name;
 
         // flag lines that cannot be filled from stock right now
         if (column == "CurrentStock" && item.QtyOutstanding > item.CurrentStock)
@@ -325,14 +251,14 @@ public sealed class RequestsView : UserControl
 
     private void LoadItems()
     {
-        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request)
+        if (gridRequests.CurrentRow?.DataBoundItem is not MaterialRequest request)
         {
-            _items.DataSource = null;
+            gridItems.DataSource = null;
             return;
         }
 
         var rows = _catalog.GetRequestItems(request.Id);
-        UiKit.Bind(_items, rows,
+        UiKit.Bind(gridItems, rows,
             ("MaterialCode", "CODE", null),
             ("MaterialName", "MATERIAL", null),
             ("Unit", "UNIT", null),
@@ -340,7 +266,5 @@ public sealed class RequestsView : UserControl
             ("QtyIssued", "ISSUED", "N2"),
             ("QtyOutstanding", "OUTSTANDING", "N2"),
             ("CurrentStock", "ON HAND", "N2"));
-
-
     }
 }

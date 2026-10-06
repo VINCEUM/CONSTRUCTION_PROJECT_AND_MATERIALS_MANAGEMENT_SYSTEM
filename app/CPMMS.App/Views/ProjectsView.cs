@@ -3,64 +3,27 @@ using CPMMS.Core.Services;
 
 namespace CPMMS.App.Views;
 
-public sealed class ProjectsView : UserControl
+/// <summary>
+/// Projects list: budget vs actual material spend vs weighted progress.
+/// Layout is in the designer; data and the add/edit actions are here.
+/// </summary>
+public partial class ProjectsView : UserControl
 {
     private readonly CatalogService _catalog = new();
     private readonly MaintenanceService _maintenance = new();
-    private readonly DataGridView grid = UiKit.Grid();
-    private readonly Button _edit;
 
     public ProjectsView()
     {
-        Dock = DockStyle.Fill;
-        BackColor = Theme.Surface;
-
-        var bar = new Panel { Dock = DockStyle.Top, Height = 46, BackColor = Theme.Surface };
-        var add = UiKit.Secondary("Add project...");
-        add.Location = new Point(0, 8);
-        add.Click += (_, _) => EditProject(null);
-
-        _edit = UiKit.Secondary("Edit...");
-        _edit.Location = new Point(126, 8);
-        _edit.Click += (_, _) => EditProject((grid.CurrentRow?.DataBoundItem as ProjectCostRow)?.Id);
-
-        bar.Controls.Add(_edit);
-        bar.Controls.Add(add);
-
-
-
-        grid.CellFormatting += (s, e) =>
-        {
-            if (e.RowIndex < 0 || grid.Rows[e.RowIndex].DataBoundItem is not ProjectCostRow row) return;
-            var column = grid.Columns[e.ColumnIndex].Name;
-
-            if (column == "MaterialBudgetRemaining")
-                e.CellStyle!.ForeColor = row.MaterialBudgetRemaining < 0 ? Theme.Danger : Theme.Ink;
-
-            if (column == "Status")
-                e.CellStyle!.ForeColor = row.Status switch
-                {
-                    "ongoing" => Theme.Good,
-                    "completed" => Theme.Muted,
-                    "on_hold" => Theme.Warn,
-                    "cancelled" => Theme.Danger,
-                    _ => Theme.InkSoft
-                };
-        };
-
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        grid.CellDoubleClick += (_, e) =>
-        {
-            if (e.RowIndex >= 0) EditProject((grid.CurrentRow?.DataBoundItem as ProjectCostRow)?.Id);
-        };
-        host.Controls.Add(grid);
-
-        Controls.Add(host);
-        Controls.Add(UiKit.SectionTitle(
-            "Budget against actual material cost. Progress is the weighted roll-up of each phase."));
-        Controls.Add(bar);
-
+        InitializeComponent();
+        Theme.Style(grid);
         Reload();
+    }
+
+    private void btnAdd_Click(object? sender, EventArgs e) => EditProject(null);
+    private void btnEdit_Click(object? sender, EventArgs e) => EditProject((grid.CurrentRow?.DataBoundItem as ProjectCostRow)?.Id);
+    private void grid_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex >= 0) EditProject((grid.CurrentRow?.DataBoundItem as ProjectCostRow)?.Id);
     }
 
     private void Reload()
@@ -75,7 +38,26 @@ public sealed class ProjectsView : UserControl
             ("MaterialBudget", "MAT. BUDGET", "N0"),
             ("MaterialCostToDate", "MAT. SPENT", "N0"),
             ("MaterialBudgetRemaining", "REMAINING", "N0"));
-        _edit.Enabled = grid.Rows.Count > 0;
+        btnEdit.Enabled = grid.Rows.Count > 0;
+    }
+
+    private void grid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+    {
+        if (e.RowIndex < 0 || grid.Rows[e.RowIndex].DataBoundItem is not ProjectCostRow row) return;
+        var column = grid.Columns[e.ColumnIndex].Name;
+
+        if (column == "MaterialBudgetRemaining")
+            e.CellStyle!.ForeColor = row.MaterialBudgetRemaining < 0 ? Theme.Danger : Theme.Ink;
+
+        if (column == "Status")
+            e.CellStyle!.ForeColor = row.Status switch
+            {
+                "ongoing" => Theme.Good,
+                "completed" => Theme.Muted,
+                "on_hold" => Theme.Warn,
+                "cancelled" => Theme.Danger,
+                _ => Theme.InkSoft
+            };
     }
 
     private void EditProject(int? projectId)

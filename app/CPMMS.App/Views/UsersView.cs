@@ -3,67 +3,34 @@ using CPMMS.Core.Services;
 
 namespace CPMMS.App.Views;
 
-public sealed class UsersView : UserControl
+/// <summary>
+/// Users: add, edit, reset password, deactivate (admin only). Layout is in the
+/// designer; the data and actions are here.
+/// </summary>
+public partial class UsersView : UserControl
 {
     private readonly MaintenanceService _maintenance = new();
-    private readonly DataGridView _grid = UiKit.Grid();
-    private readonly Button _edit, _toggle, _password;
 
     public UsersView()
     {
-        Dock = DockStyle.Fill;
-        BackColor = Theme.Surface;
-
-        var bar = new Panel { Dock = DockStyle.Top, Height = 46, BackColor = Theme.Surface };
-
-        var add = UiKit.Secondary("Add user…");
-        add.Location = new Point(0, 8);
-        add.Click += (_, _) => Edit(null);
-
-        _edit = UiKit.Secondary("Edit…");
-        _edit.Location = new Point(104, 8);
-        _edit.Click += (_, _) => Edit(Selected());
-
-        _password = UiKit.Secondary("Reset password…");
-        _password.Location = new Point(180, 8);
-        _password.Click += (_, _) => ResetPassword();
-
-        _toggle = UiKit.Secondary("Deactivate");
-        _toggle.Location = new Point(320, 8);
-        _toggle.Click += (_, _) => ToggleStatus();
-
-        bar.Controls.AddRange(new Control[] { _toggle, _password, _edit, add });
-
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        _grid.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) Edit(Selected()); };
-        _grid.CellFormatting += Format;
-        _grid.SelectionChanged += (_, _) => UpdateButtons();
-        host.Controls.Add(_grid);
-
-        var note = new Label
-        {
-            Text = "Passwords are stored as bcrypt hashes and are never shown — an admin can only replace one, "
-                 + "never read it. Accounts are deactivated rather than deleted so their approvals and issuances stay attributable.",
-            Dock = DockStyle.Bottom,
-            Height = 36,
-            ForeColor = Theme.Muted,
-            Font = Theme.Small,
-            AutoSize = false
-        };
-
-        Controls.Add(host);
-        Controls.Add(note);
-        Controls.Add(bar);
-
+        InitializeComponent();
+        Theme.Style(grid);
         Reload();
     }
 
-    private User? Selected() => _grid.CurrentRow?.DataBoundItem as User;
+    private void btnAdd_Click(object? sender, EventArgs e) => Edit(null);
+    private void btnEdit_Click(object? sender, EventArgs e) => Edit(Selected());
+    private void btnPassword_Click(object? sender, EventArgs e) => ResetPassword();
+    private void btnToggle_Click(object? sender, EventArgs e) => ToggleStatus();
+    private void grid_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) { if (e.RowIndex >= 0) Edit(Selected()); }
+    private void grid_SelectionChanged(object? sender, EventArgs e) => UpdateButtons();
+
+    private User? Selected() => grid.CurrentRow?.DataBoundItem as User;
 
     private void Reload()
     {
         var rows = _maintenance.GetUsers();
-        UiKit.Bind(_grid, rows,
+        UiKit.Bind(grid, rows,
             ("FullName", "NAME", null),
             ("Email", "EMAIL", null),
             ("RoleName", "ROLE", null),
@@ -75,16 +42,16 @@ public sealed class UsersView : UserControl
     private void UpdateButtons()
     {
         var user = Selected();
-        _edit.Enabled = user is not null;
-        _password.Enabled = user is not null;
-        _toggle.Enabled = user is not null && user.Id != AppSession.Require.Id;
-        _toggle.Text = user?.Status == "inactive" ? "Reactivate" : "Deactivate";
+        btnEdit.Enabled = user is not null;
+        btnPassword.Enabled = user is not null;
+        btnToggle.Enabled = user is not null && user.Id != AppSession.Require.Id;
+        btnToggle.Text = user?.Status == "inactive" ? "Reactivate" : "Deactivate";
     }
 
-    private void Format(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void grid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
-        if (e.RowIndex < 0 || _grid.Rows[e.RowIndex].DataBoundItem is not User row) return;
-        var column = _grid.Columns[e.ColumnIndex].Name;
+        if (e.RowIndex < 0 || grid.Rows[e.RowIndex].DataBoundItem is not User row) return;
+        var column = grid.Columns[e.ColumnIndex].Name;
 
         if (column == "Status")
             e.CellStyle!.ForeColor = row.Status == "active" ? Theme.Good : Theme.Muted;

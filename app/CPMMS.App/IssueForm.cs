@@ -21,32 +21,31 @@ public sealed class IssueEditRow
     public decimal LineCost => QtyToIssue * UnitCost;
 }
 
-public sealed class IssueForm : Form
+/// <summary>
+/// Release materials against an approved request. The layout lives in
+/// IssueForm.Designer.cs; the editable line grid and the stock rules are here.
+/// </summary>
+public partial class IssueForm : Form
 {
-    private readonly MaterialRequest _request;
-    private readonly BindingList<IssueEditRow> _rows;
-    private readonly DataGridView _grid = UiKit.Grid();
-    private readonly TextBox _receivedBy = new();
-    private readonly DateTimePicker _date = new();
-    private readonly Label _total = new();
-    private readonly Label _error = new();
+    private MaterialRequest _request = null!;
+    private BindingList<IssueEditRow> _rows = new();
 
     public int? IssueId { get; private set; }
 
-    public IssueForm(MaterialRequest request)
+    /// <summary>Parameterless constructor so the form opens in the designer.</summary>
+    public IssueForm()
+    {
+        InitializeComponent();
+        Theme.Style(gridLines);
+    }
+
+    public IssueForm(MaterialRequest request) : this()
     {
         _request = request;
-
-        // this form is built entirely in code (no Designer baseline), so let
-        // Windows' own per-monitor DPI scaling handle it — WinForms' separate
-        // font-ratio auto-scale would otherwise double up and misalign things
-        AutoScaleMode = AutoScaleMode.None;
-
         Text = $"Issue materials — {request.RequestNo}";
-        StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(1080, 560);
-        BackColor = Theme.Surface;
-        Font = Theme.Body;
+        lblTitle.Text = $"{request.RequestNo}  ·  {request.ProjectName}";
+        lblSub.Text = $"Requested by {request.RequesterName} on {request.RequestDate:d}  ·  status {request.Status}";
+        dtDate.Value = DateTime.Today;
 
         var items = new CatalogService().GetRequestItems(request.Id);
         _rows = new BindingList<IssueEditRow>(items.Select(i => new IssueEditRow
@@ -65,42 +64,7 @@ public sealed class IssueForm : Form
             QtyToIssue = Math.Max(0, Math.Min(i.QtyOutstanding, i.CurrentStock))
         }).ToList());
 
-        // ---- header ---------------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 96, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
-        var title = new Label
-        {
-            Text = $"{request.RequestNo}  ·  {request.ProjectName}",
-            Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false
-        };
-        var sub = new Label
-        {
-            Text = $"Requested by {request.RequesterName} on {request.RequestDate:d}  ·  status {request.Status}",
-            ForeColor = Theme.Muted, Dock = DockStyle.Top, Height = 20, AutoSize = false
-        };
-        var fields = new Panel { Dock = DockStyle.Top, Height = 34 };
-
-        // positions are computed from each label's own measured width (not a
-        // guessed pixel number), so a label can never overlap the control after it
-        var lblDate = new Label { Text = "Issue date", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _date.Format = DateTimePickerFormat.Short;
-        _date.Location = new Point(lblDate.Right + 12, 4);
-        _date.Width = 160;
-        _date.Value = DateTime.Today;
-
-        var lblRecv = new Label { Text = "Received by", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_date.Right + 24, 8), AutoSize = true };
-        _receivedBy.Location = new Point(lblRecv.Right + 12, 4);
-        _receivedBy.Width = 300;
-        _receivedBy.BorderStyle = BorderStyle.FixedSingle;
-        _receivedBy.PlaceholderText = "Name of the person on site";
-
-        fields.Controls.AddRange(new Control[] { lblDate, _date, lblRecv, _receivedBy });
-
-        header.Controls.Add(fields);
-        header.Controls.Add(sub);
-        header.Controls.Add(title);
-
-        // ---- grid -----------------------------------------------------------
-        UiKit.Bind(_grid, _rows,
+        UiKit.Bind(gridLines, _rows,
             ("MaterialCode", "CODE", null),
             ("MaterialName", "MATERIAL", null),
             ("Unit", "UNIT", null),
@@ -112,85 +76,38 @@ public sealed class IssueForm : Form
             ("QtyToIssue", "ISSUE NOW", "N2"),
             ("LineCost", "LINE COST", "N2"));
 
-        // each column gets enough room for its own header — Fill mode then
-        // shares out whatever space is left over
         var minWidths = new Dictionary<string, int>
         {
             ["MaterialCode"] = 80, ["MaterialName"] = 180, ["Unit"] = 65,
             ["QtyRequested"] = 100, ["QtyAlreadyIssued"] = 80, ["QtyOutstanding"] = 125,
             ["OnHand"] = 95, ["UnitCost"] = 105, ["QtyToIssue"] = 105, ["LineCost"] = 105
         };
-        foreach (var (name, width) in minWidths) _grid.Columns[name]!.MinimumWidth = width;
+        foreach (var (name, width) in minWidths) gridLines.Columns[name]!.MinimumWidth = width;
 
-        _grid.ReadOnly = false;
-        foreach (DataGridViewColumn c in _grid.Columns)
+        gridLines.ReadOnly = false;
+        foreach (DataGridViewColumn c in gridLines.Columns)
             c.ReadOnly = c.Name != "QtyToIssue";
-        _grid.Columns["QtyToIssue"]!.DefaultCellStyle.BackColor = Theme.AccentSoft;
-        _grid.Columns["QtyToIssue"]!.DefaultCellStyle.Font = new Font("Segoe UI Semibold", 9.75F);
-        _grid.EditMode = DataGridViewEditMode.EditOnEnter;
-        _grid.CellValueChanged += (_, _) => Recalculate();
-        _grid.CurrentCellDirtyStateChanged += (_, _) =>
+        gridLines.Columns["QtyToIssue"]!.DefaultCellStyle.BackColor = Theme.AccentSoft;
+        gridLines.Columns["QtyToIssue"]!.DefaultCellStyle.Font = new Font("Segoe UI Semibold", 9.75F);
+        gridLines.EditMode = DataGridViewEditMode.EditOnEnter;
+        gridLines.CellValueChanged += (_, _) => Recalculate();
+        gridLines.CurrentCellDirtyStateChanged += (_, _) =>
         {
-            if (_grid.IsCurrentCellDirty) _grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            if (gridLines.IsCurrentCellDirty) gridLines.CommitEdit(DataGridViewDataErrorContexts.Commit);
         };
-        _grid.CellFormatting += Warn;
-        _grid.DataError += (_, e) => { e.Cancel = true; ShowError("Enter a number."); };
-
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        host.Controls.Add(_grid);
-
-        // ---- footer ---------------------------------------------------------
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 92, BackColor = Color.White, Padding = new Padding(18, 10, 18, 10) };
-
-        _error.ForeColor = Theme.Danger;
-        _error.Dock = DockStyle.Top;
-        _error.Height = 20;
-        _error.AutoSize = false;
-
-        _total.Font = Theme.H2;
-        _total.ForeColor = Theme.Ink;
-        _total.Dock = DockStyle.Top;
-        _total.Height = 26;
-        _total.AutoSize = false;
-
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 36, FlowDirection = FlowDirection.RightToLeft };
-        var post = new Button
-        {
-            Text = "Post issuance",
-            BackColor = Theme.Accent,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Font = new Font("Segoe UI Semibold", 9.75F),
-            Height = 32,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowOnly,
-            Width = 130
-        };
-        post.FlatAppearance.BorderSize = 0;
-        post.Click += Post;
-
-        var cancel = UiKit.Secondary("Cancel");
-        cancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-
-        buttons.Controls.Add(post);
-        buttons.Controls.Add(cancel);
-
-        footer.Controls.Add(buttons);
-        footer.Controls.Add(_error);
-        footer.Controls.Add(_total);
-
-        Controls.Add(host);
-        Controls.Add(footer);
-        Controls.Add(header);
+        gridLines.CellFormatting += Warn;
+        gridLines.DataError += (_, e) => { e.Cancel = true; ShowError("Enter a number."); };
 
         Recalculate();
     }
+
+    private void btnCancel_Click(object? sender, EventArgs e) { DialogResult = DialogResult.Cancel; Close(); }
 
     private void Warn(object? sender, DataGridViewCellFormattingEventArgs e)
     {
         if (e.RowIndex < 0 || e.RowIndex >= _rows.Count) return;
         var row = _rows[e.RowIndex];
-        var column = _grid.Columns[e.ColumnIndex].Name;
+        var column = gridLines.Columns[e.ColumnIndex].Name;
 
         if (column == "QtyToIssue" && row.QtyToIssue > row.OnHand)
             e.CellStyle!.ForeColor = Theme.Danger;
@@ -202,13 +119,13 @@ public sealed class IssueForm : Form
     {
         var total = _rows.Sum(r => r.LineCost);
         var lines = _rows.Count(r => r.QtyToIssue > 0);
-        _total.Text = $"{lines} line(s) to issue  ·  ₱{total:N2}";
-        _grid.Refresh();
+        lblTotal.Text = $"{lines} line(s) to issue  ·  ₱{total:N2}";
+        gridLines.Refresh();
     }
 
-    private void ShowError(string message) => _error.Text = message;
+    private void ShowError(string message) => lblError.Text = message;
 
-    private void Post(object? sender, EventArgs e)
+    private void btnPost_Click(object? sender, EventArgs e)
     {
         ShowError("");
 
@@ -223,7 +140,7 @@ public sealed class IssueForm : Form
                          .ToList();
 
         if (lines.Count == 0) { ShowError("Set a quantity on at least one line."); return; }
-        if (string.IsNullOrWhiteSpace(_receivedBy.Text)) { ShowError("Record who received the materials on site."); _receivedBy.Focus(); return; }
+        if (string.IsNullOrWhiteSpace(txtReceivedBy.Text)) { ShowError("Record who received the materials on site."); txtReceivedBy.Focus(); return; }
 
         var over = _rows.FirstOrDefault(r => r.QtyToIssue > r.QtyOutstanding);
         if (over is not null)
@@ -236,7 +153,7 @@ public sealed class IssueForm : Form
         {
             Cursor = Cursors.WaitCursor;
             IssueId = new InventoryService().IssueMaterials(
-                _request.Id, _date.Value.Date, AppSession.Require.Id, _receivedBy.Text.Trim(), lines);
+                _request.Id, dtDate.Value.Date, AppSession.Require.Id, txtReceivedBy.Text.Trim(), lines);
 
             MessageBox.Show(this,
                 $"Issued {lines.Count} line(s) to {_request.ProjectName}.\n\n" +

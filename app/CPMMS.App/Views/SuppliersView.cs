@@ -3,59 +3,34 @@ using CPMMS.Core.Services;
 
 namespace CPMMS.App.Views;
 
-public sealed class SuppliersView : UserControl
+/// <summary>
+/// Suppliers: add, edit, deactivate/reactivate. Layout is in the designer;
+/// the data and actions are here.
+/// </summary>
+public partial class SuppliersView : UserControl
 {
     private readonly MaintenanceService _maintenance = new();
-    private readonly DataGridView _grid = UiKit.Grid();
-    private readonly CheckBox _showInactive = new();
-    private readonly Button _edit, _toggle;
 
     public SuppliersView()
     {
-        Dock = DockStyle.Fill;
-        BackColor = Theme.Surface;
-
-        var bar = new Panel { Dock = DockStyle.Top, Height = 46, BackColor = Theme.Surface };
-
-        var add = UiKit.Secondary("Add supplier…");
-        add.Location = new Point(0, 8);
-        add.Click += (_, _) => Edit(null);
-
-        _edit = UiKit.Secondary("Edit…");
-        _edit.Location = new Point(120, 8);
-        _edit.Click += (_, _) => Edit(Selected());
-
-        _toggle = UiKit.Secondary("Deactivate");
-        _toggle.Location = new Point(196, 8);
-        _toggle.Click += (_, _) => ToggleStatus();
-
-        _showInactive.Text = "Show inactive";
-        _showInactive.Font = Theme.Body;
-        _showInactive.ForeColor = Theme.InkSoft;
-        _showInactive.Location = new Point(306, 12);
-        _showInactive.AutoSize = true;
-        _showInactive.CheckedChanged += (_, _) => Reload();
-
-        bar.Controls.AddRange(new Control[] { _showInactive, _toggle, _edit, add });
-
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        _grid.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) Edit(Selected()); };
-        _grid.CellFormatting += Format;
-        _grid.SelectionChanged += (_, _) => UpdateButtons();
-        host.Controls.Add(_grid);
-
-        Controls.Add(host);
-        Controls.Add(bar);
-
+        InitializeComponent();
+        Theme.Style(grid);
         Reload();
     }
 
-    private Supplier? Selected() => _grid.CurrentRow?.DataBoundItem as Supplier;
+    private void btnAdd_Click(object? sender, EventArgs e) => Edit(null);
+    private void btnEdit_Click(object? sender, EventArgs e) => Edit(Selected());
+    private void btnToggle_Click(object? sender, EventArgs e) => ToggleStatus();
+    private void chkInactive_CheckedChanged(object? sender, EventArgs e) => Reload();
+    private void grid_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) { if (e.RowIndex >= 0) Edit(Selected()); }
+    private void grid_SelectionChanged(object? sender, EventArgs e) => UpdateButtons();
+
+    private Supplier? Selected() => grid.CurrentRow?.DataBoundItem as Supplier;
 
     private void Reload()
     {
-        var rows = _maintenance.GetSuppliers(_showInactive.Checked);
-        UiKit.Bind(_grid, rows,
+        var rows = _maintenance.GetSuppliers(chkInactive.Checked);
+        UiKit.Bind(grid, rows,
             ("CompanyName", "SUPPLIER", null),
             ("ContactPerson", "CONTACT PERSON", null),
             ("ContactNo", "PHONE", null),
@@ -69,15 +44,15 @@ public sealed class SuppliersView : UserControl
     private void UpdateButtons()
     {
         var supplier = Selected();
-        _edit.Enabled = supplier is not null;
-        _toggle.Enabled = supplier is not null;
-        _toggle.Text = supplier?.Status == "inactive" ? "Reactivate" : "Deactivate";
+        btnEdit.Enabled = supplier is not null;
+        btnToggle.Enabled = supplier is not null;
+        btnToggle.Text = supplier?.Status == "inactive" ? "Reactivate" : "Deactivate";
     }
 
-    private void Format(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void grid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
-        if (e.RowIndex < 0 || _grid.Rows[e.RowIndex].DataBoundItem is not Supplier row) return;
-        if (_grid.Columns[e.ColumnIndex].Name != "Status") return;
+        if (e.RowIndex < 0 || grid.Rows[e.RowIndex].DataBoundItem is not Supplier row) return;
+        if (grid.Columns[e.ColumnIndex].Name != "Status") return;
         e.CellStyle!.ForeColor = row.Status == "active" ? Theme.Good : Theme.Muted;
     }
 

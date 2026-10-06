@@ -14,39 +14,30 @@ public sealed class FieldSpec
 }
 
 /// <summary>
-/// One dialog that builds itself from a list of fields, so suppliers,
-/// materials, projects and users all edit through the same screen instead of
-/// four near-identical hand-built forms.
+/// One dialog that builds itself from a list of fields, so suppliers, materials,
+/// projects and users all edit through the same screen. The shell (header, body
+/// panel, footer, buttons) lives in RecordEditor.Designer.cs; the fields are
+/// generated into the body panel at runtime because they differ every time.
 /// </summary>
-public sealed class RecordEditor : Form
+public partial class RecordEditor : Form
 {
     private readonly Dictionary<string, Control> _controls = new();
-    private readonly Label _error = new();
 
     public Dictionary<string, object?> Values { get; } = new();
 
-    public RecordEditor(string title, IReadOnlyList<FieldSpec> fields, string saveText = "Save")
+    /// <summary>Parameterless constructor so the form opens in the designer.</summary>
+    public RecordEditor()
+    {
+        InitializeComponent();
+    }
+
+    public RecordEditor(string title, IReadOnlyList<FieldSpec> fields, string saveText = "Save") : this()
     {
         Text = title;
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        BackColor = Color.White;
-        Font = Theme.Body;
-
-        var head = new Label
-        {
-            Text = title,
-            Font = Theme.H1,
-            ForeColor = Theme.Ink,
-            Dock = DockStyle.Top,
-            Height = 42,
-            Padding = new Padding(20, 10, 20, 0),
-            AutoSize = false
-        };
-
-        var body = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(20, 6, 20, 6) };
+        lblHead.Text = title;
+        btnSave.Text = saveText;
+        AcceptButton = btnSave;
+        CancelButton = btnCancel;
 
         var y = 6;
         foreach (var field in fields)
@@ -60,7 +51,7 @@ public sealed class RecordEditor : Form
                 Size = new Size(380, 18),
                 AutoSize = false
             };
-            body.Controls.Add(label);
+            panelBody.Controls.Add(label);
             y += 20;
 
             Control input = field.Kind switch
@@ -90,7 +81,7 @@ public sealed class RecordEditor : Form
             }
 
             _controls[field.Key] = input;
-            body.Controls.Add(input);
+            panelBody.Controls.Add(input);
             y += input.Height + 4;
 
             if (!string.IsNullOrWhiteSpace(field.Hint))
@@ -104,48 +95,17 @@ public sealed class RecordEditor : Form
                     Size = new Size(380, 30),
                     AutoSize = false
                 };
-                body.Controls.Add(hint);
+                panelBody.Controls.Add(hint);
                 y += 32;
             }
             else y += 8;
         }
 
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 76, Padding = new Padding(20, 6, 20, 12) };
-
-        _error.ForeColor = Theme.Danger;
-        _error.Dock = DockStyle.Top;
-        _error.Height = 20;
-        _error.AutoSize = false;
-
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.RightToLeft };
-
-        var save = new Button
-        {
-            Text = saveText,
-            BackColor = Theme.Accent, ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI Semibold", 9.75F),
-            Width = 110, Height = 32
-        };
-        save.FlatAppearance.BorderSize = 0;
-        save.Click += (_, _) => Commit();
-
-        var cancel = UiKit.Secondary("Cancel");
-        cancel.Width = 90;
-        cancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-
-        buttons.Controls.Add(save);
-        buttons.Controls.Add(cancel);
-        footer.Controls.Add(buttons);
-        footer.Controls.Add(_error);
-
-        Controls.Add(body);
-        Controls.Add(footer);
-        Controls.Add(head);
-
         ClientSize = new Size(424, Math.Min(660, 42 + y + 90));
-        AcceptButton = save;
-        CancelButton = cancel;
     }
+
+    private void btnSave_Click(object? sender, EventArgs e) => Commit();
+    private void btnCancel_Click(object? sender, EventArgs e) { DialogResult = DialogResult.Cancel; Close(); }
 
     private static ComboBox BuildCombo(FieldSpec field)
     {
@@ -173,7 +133,7 @@ public sealed class RecordEditor : Form
 
     private void Commit()
     {
-        _error.Text = "";
+        lblError.Text = "";
         Values.Clear();
 
         foreach (var (key, control) in _controls)

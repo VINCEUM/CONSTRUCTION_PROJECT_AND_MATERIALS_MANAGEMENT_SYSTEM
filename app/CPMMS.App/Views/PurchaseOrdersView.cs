@@ -3,60 +3,31 @@ using CPMMS.Core.Services;
 
 namespace CPMMS.App.Views;
 
-public sealed class PurchaseOrdersView : UserControl
+/// <summary>
+/// Purchase orders: a master list with its ordered items below, and a Receive
+/// action. Layout is in the designer; the data and actions are here.
+/// </summary>
+public partial class PurchaseOrdersView : UserControl
 {
     private readonly CatalogService _catalog = new();
-    private readonly DataGridView _orders = UiKit.Grid();
-    private readonly DataGridView _items = UiKit.Grid();
-    private readonly CheckBox _openOnly = new();
-    private readonly Button _receive;
 
     public PurchaseOrdersView()
     {
-        Dock = DockStyle.Fill;
-        BackColor = Theme.Surface;
-
-        var bar = new Panel { Dock = DockStyle.Top, Height = 44, BackColor = Theme.Surface };
-
-        _openOnly.Text = "Open orders only";
-        _openOnly.Font = Theme.Body;
-        _openOnly.ForeColor = Theme.InkSoft;
-        _openOnly.Checked = true;
-        _openOnly.Location = new Point(0, 11);
-        _openOnly.AutoSize = true;
-        _openOnly.CheckedChanged += (_, _) => Reload();
-
-        _receive = UiKit.Secondary("Receive delivery…");
-        _receive.Location = new Point(160, 7);
-        _receive.Click += (_, _) => Receive();
-
-        bar.Controls.Add(_receive);
-        bar.Controls.Add(_openOnly);
-
-        var detail = new Panel { Dock = DockStyle.Bottom, Height = 230, BackColor = Theme.Surface, Padding = new Padding(0, 8, 0, 0) };
-        var detailHost = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        detailHost.Controls.Add(_items);
-        detail.Controls.Add(detailHost);
-        detail.Controls.Add(UiKit.SectionTitle("Ordered items"));
-
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
-        _orders.SelectionChanged += (_, _) => LoadItems();
-        _orders.CellFormatting += FormatOrder;
-        _orders.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) Receive(); };
-        _items.CellFormatting += FormatItem;
-        host.Controls.Add(_orders);
-
-        Controls.Add(host);
-        Controls.Add(detail);
-        Controls.Add(bar);
-
+        InitializeComponent();
+        Theme.Style(gridOrders);
+        Theme.Style(gridItems);
         Reload();
     }
 
+    private void chkOpenOnly_CheckedChanged(object? sender, EventArgs e) => Reload();
+    private void btnReceive_Click(object? sender, EventArgs e) => Receive();
+    private void gridOrders_SelectionChanged(object? sender, EventArgs e) => LoadItems();
+    private void gridOrders_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) { if (e.RowIndex >= 0) Receive(); }
+
     private void Reload()
     {
-        var rows = _catalog.GetPurchaseOrders(_openOnly.Checked);
-        UiKit.Bind(_orders, rows,
+        var rows = _catalog.GetPurchaseOrders(chkOpenOnly.Checked);
+        UiKit.Bind(gridOrders, rows,
             ("PoNo", "PO NO.", null),
             ("SupplierName", "SUPPLIER", null),
             ("OrderDate", "ORDERED", "d"),
@@ -70,17 +41,17 @@ public sealed class PurchaseOrdersView : UserControl
 
     private void LoadItems()
     {
-        if (_orders.CurrentRow?.DataBoundItem is not PurchaseOrderRow po)
+        if (gridOrders.CurrentRow?.DataBoundItem is not PurchaseOrderRow po)
         {
-            _items.DataSource = null;
-            _receive.Enabled = false;
+            gridItems.DataSource = null;
+            btnReceive.Enabled = false;
             return;
         }
 
-        _receive.Enabled = po.Status is "draft" or "sent" or "partially_received";
+        btnReceive.Enabled = po.Status is "draft" or "sent" or "partially_received";
 
         var rows = _catalog.GetPurchaseOrderItems(po.Id);
-        UiKit.Bind(_items, rows,
+        UiKit.Bind(gridItems, rows,
             ("MaterialCode", "CODE", null),
             ("MaterialName", "MATERIAL", null),
             ("Unit", "UNIT", null),
@@ -90,10 +61,10 @@ public sealed class PurchaseOrdersView : UserControl
             ("UnitPrice", "UNIT PRICE", "N2"));
     }
 
-    private void FormatOrder(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void gridOrders_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
-        if (e.RowIndex < 0 || _orders.Rows[e.RowIndex].DataBoundItem is not PurchaseOrderRow row) return;
-        if (_orders.Columns[e.ColumnIndex].Name != "Status") return;
+        if (e.RowIndex < 0 || gridOrders.Rows[e.RowIndex].DataBoundItem is not PurchaseOrderRow row) return;
+        if (gridOrders.Columns[e.ColumnIndex].Name != "Status") return;
 
         e.CellStyle!.ForeColor = row.Status switch
         {
@@ -105,16 +76,16 @@ public sealed class PurchaseOrdersView : UserControl
         };
     }
 
-    private void FormatItem(object? sender, DataGridViewCellFormattingEventArgs e)
+    private void gridItems_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
     {
-        if (e.RowIndex < 0 || _items.Rows[e.RowIndex].DataBoundItem is not PurchaseOrderItemRow item) return;
-        if (_items.Columns[e.ColumnIndex].Name == "QtyOutstanding" && item.QtyOutstanding > 0)
+        if (e.RowIndex < 0 || gridItems.Rows[e.RowIndex].DataBoundItem is not PurchaseOrderItemRow item) return;
+        if (gridItems.Columns[e.ColumnIndex].Name == "QtyOutstanding" && item.QtyOutstanding > 0)
             e.CellStyle!.ForeColor = Theme.Warn;
     }
 
     private void Receive()
     {
-        if (_orders.CurrentRow?.DataBoundItem is not PurchaseOrderRow po) return;
+        if (gridOrders.CurrentRow?.DataBoundItem is not PurchaseOrderRow po) return;
         if (po.Status is "received" or "closed" or "cancelled")
         {
             MessageBox.Show(this, $"This order is '{po.Status}' and cannot receive goods.",
