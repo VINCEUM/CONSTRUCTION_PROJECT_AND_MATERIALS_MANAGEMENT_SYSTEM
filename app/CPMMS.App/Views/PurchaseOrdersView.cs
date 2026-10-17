@@ -1,3 +1,4 @@
+using CPMMS.Core;
 using CPMMS.Core.Models;
 using CPMMS.Core.Services;
 
@@ -9,6 +10,7 @@ public sealed class PurchaseOrdersView : UserControl
     private readonly DataGridView _orders = UiKit.Grid();
     private readonly DataGridView _items = UiKit.Grid();
     private readonly CheckBox _openOnly = new();
+    private readonly Button _new;
     private readonly Button _receive;
 
     public PurchaseOrdersView()
@@ -26,11 +28,23 @@ public sealed class PurchaseOrdersView : UserControl
         _openOnly.AutoSize = true;
         _openOnly.CheckedChanged += (_, _) => Reload();
 
+        // creating a PO is a procurement decision — admin only, and it needs
+        // a real database (the request/supplier lookups aren't in demo mode)
+        var canCreate = AppSession.CurrentUser?.IsAdmin == true && !DemoMode.Enabled;
+
+        _new = UiKit.Secondary("New purchase order…");
+        _new.Location = new Point(160, 7);
+        _new.Visible = canCreate;
+        _new.Click += (_, _) => NewOrder();
+
+        var afterNew = canCreate ? _new.Left + _new.GetPreferredSize(Size.Empty).Width + 8 : 160;
+
         _receive = UiKit.Secondary("Receive delivery…");
-        _receive.Location = new Point(160, 7);
+        _receive.Location = new Point(afterNew, 7);
         _receive.Click += (_, _) => Receive();
 
         bar.Controls.Add(_receive);
+        bar.Controls.Add(_new);
         bar.Controls.Add(_openOnly);
 
         var detail = new Panel { Dock = DockStyle.Bottom, Height = 230, BackColor = Theme.Surface, Padding = new Padding(0, 8, 0, 0) };
@@ -110,6 +124,12 @@ public sealed class PurchaseOrdersView : UserControl
         if (e.RowIndex < 0 || _items.Rows[e.RowIndex].DataBoundItem is not PurchaseOrderItemRow item) return;
         if (_items.Columns[e.ColumnIndex].Name == "QtyOutstanding" && item.QtyOutstanding > 0)
             e.CellStyle!.ForeColor = Theme.Warn;
+    }
+
+    private void NewOrder()
+    {
+        using var form = new NewPurchaseOrderForm();
+        if (form.ShowDialog(FindForm()) == DialogResult.OK) Reload();
     }
 
     private void Receive()

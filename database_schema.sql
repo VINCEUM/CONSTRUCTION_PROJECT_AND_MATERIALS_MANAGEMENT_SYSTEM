@@ -1,5 +1,5 @@
 -- ============================================================================
---  Construction Project and Materials Management System (CPMMS)
+--  Construction Project and Material Monitoring System (CPMMS)
 --  IT13 · Database schema · MySQL 8.0
 --
 --  Design principles

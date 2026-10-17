@@ -81,6 +81,13 @@ public sealed class LedgerForm : Form
 
     private void InitializeComponent()
     {
+        SuspendLayout();
+        // 
+        // LedgerForm
+        // 
+        ClientSize = new Size(1245, 603);
+        Name = "LedgerForm";
+        ResumeLayout(false);
 
     }
 }

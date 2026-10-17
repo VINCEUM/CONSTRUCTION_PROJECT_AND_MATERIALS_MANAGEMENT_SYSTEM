@@ -1,4 +1,4 @@
-# Construction Project and Materials Management System (CPMMS)
+# Construction Project and Material Monitoring System (CPMMS)
 IT13 · C# / .NET 9 WinForms · MySQL 8
 
 Tracks what a construction project **planned** to consume against what it **actually**

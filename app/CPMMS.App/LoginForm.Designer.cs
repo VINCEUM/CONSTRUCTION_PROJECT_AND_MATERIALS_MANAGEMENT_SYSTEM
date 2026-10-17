@@ -48,7 +48,7 @@ namespace CPMMS.App
             this.lblBrand.Name = "lblBrand";
             this.lblBrand.Size = new System.Drawing.Size(244, 160);
             this.lblBrand.TabIndex = 0;
-            this.lblBrand.Text = "Construction Project and Materials Management";
+            this.lblBrand.Text = "Construction Project and Material Monitoring";
             //
             // lblTagline
             //

@@ -13,8 +13,7 @@ public static class DatabaseHelper
 {
     private static string? _connectionString;
 
-    static DatabaseHelper()
-    {
+    static DatabaseHelper()    {
         // maps column current_stock -> property CurrentStock, so queries can
         // select the real column names without aliasing every one of them
         DefaultTypeMap.MatchNamesWithUnderscores = true;
