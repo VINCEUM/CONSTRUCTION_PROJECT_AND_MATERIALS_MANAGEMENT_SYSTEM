@@ -67,7 +67,7 @@ public sealed class InventoryService
             var projectId = request.ProjectId;
 
             // --- lock every material row first, then check every line ------------
-            // Locking before writing is what makes two storekeepers issuing the
+            // Locking before writing is what makes two administrators issuing the
             // last stock at the same time safe.
             var stockNow = new Dictionary<int, decimal>();
             var names = new Dictionary<int, string>();

@@ -43,15 +43,13 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- roles and users   (all demo passwords are "password")
 -- ---------------------------------------------------------------------------
 INSERT INTO roles (id, name, description) VALUES
- (1,'Admin','Full access: users, suppliers, approvals, reports, settings'),
- (2,'Project Engineer','Projects, tasks, estimates, material requests, progress'),
- (3,'Storekeeper','Receiving, issuance, returns, physical count');
+ (1,'Admin','Full access: users, suppliers, approvals, purchasing, receiving, issuing, stock adjustments, reports'),
+ (2,'Project Engineer','Projects, tasks, estimates, material requests, progress');
 
 INSERT INTO users (id, role_id, full_name, email, password, contact_no, status) VALUES
  (1,1,'Engr. Ramon T. Villareal','admin@buildcorp.test','$2a$11$ydikIdVlcBs.8SCoHLNT3OPedddOgf2pNmwp8tJCsmEUAwrldP7Dy','0917-555-0101','active'),
  (2,2,'Engr. Karla M. Dizon','karla.dizon@buildcorp.test','$2a$11$ydikIdVlcBs.8SCoHLNT3OPedddOgf2pNmwp8tJCsmEUAwrldP7Dy','0917-555-0102','active'),
- (3,2,'Engr. Nico P. Alcantara','nico.alcantara@buildcorp.test','$2a$11$ydikIdVlcBs.8SCoHLNT3OPedddOgf2pNmwp8tJCsmEUAwrldP7Dy','0917-555-0103','active'),
- (4,3,'Mario B. Sagun','mario.sagun@buildcorp.test','$2a$11$ydikIdVlcBs.8SCoHLNT3OPedddOgf2pNmwp8tJCsmEUAwrldP7Dy','0917-555-0104','active');
+ (3,2,'Engr. Nico P. Alcantara','nico.alcantara@buildcorp.test','$2a$11$ydikIdVlcBs.8SCoHLNT3OPedddOgf2pNmwp8tJCsmEUAwrldP7Dy','0917-555-0103','active');
 
 -- ---------------------------------------------------------------------------
 -- reference data
@@ -233,9 +231,9 @@ INSERT INTO purchase_order_items (id, po_id, material_id, qty_ordered, qty_recei
  (8,4,20, 12.000,  0.000,  78.00);
 
 INSERT INTO deliveries (id, dr_no, po_id, delivery_date, received_by, photo_path, remarks, status) VALUES
- (1,'DR-88412',1,'2026-10-08',4,'/storage/deliveries/dr-88412.jpg','Complete per PO',            'posted'),
- (2,'DR-10233',2,'2026-10-07',4,'/storage/deliveries/dr-10233.jpg','Complete per PO',            'posted'),
- (3,'DR-77510',3,'2026-10-18',4,'/storage/deliveries/dr-77510.jpg','Partial: 120 of 200 bags cement; CHB to follow','posted');
+ (1,'DR-88412',1,'2026-10-08',1,'/storage/deliveries/dr-88412.jpg','Complete per PO',            'posted'),
+ (2,'DR-10233',2,'2026-10-07',1,'/storage/deliveries/dr-10233.jpg','Complete per PO',            'posted'),
+ (3,'DR-77510',3,'2026-10-18',1,'/storage/deliveries/dr-77510.jpg','Partial: 120 of 200 bags cement; CHB to follow','posted');
 
 INSERT INTO delivery_items (delivery_id, po_item_id, material_id, qty_received, unit_price, remarks) VALUES
  (1,1, 7,120.000, 262.00,NULL),
@@ -247,19 +245,19 @@ INSERT INTO delivery_items (delivery_id, po_item_id, material_id, qty_received, 
 INSERT INTO inventory_transactions
  (material_id, txn_type, quantity, unit_cost, balance_after, project_id, reference_type, reference_id, performed_by, remarks)
 VALUES
- ( 7,'RECEIVED',120.000, 262.00,0,NULL,'delivery',1,4,'DR-88412'),
- (12,'RECEIVED', 40.000, 980.00,0,NULL,'delivery',1,4,'DR-88412'),
- ( 2,'RECEIVED', 20.000,1200.00,0,NULL,'delivery',2,4,'DR-10233'),
- ( 3,'RECEIVED', 16.000,1400.00,0,NULL,'delivery',2,4,'DR-10233'),
- ( 1,'RECEIVED',120.000, 285.00,0,NULL,'delivery',3,4,'DR-77510 partial');
+ ( 7,'RECEIVED',120.000, 262.00,0,NULL,'delivery',1,1,'DR-88412'),
+ (12,'RECEIVED', 40.000, 980.00,0,NULL,'delivery',1,1,'DR-88412'),
+ ( 2,'RECEIVED', 20.000,1200.00,0,NULL,'delivery',2,1,'DR-10233'),
+ ( 3,'RECEIVED', 16.000,1400.00,0,NULL,'delivery',2,1,'DR-10233'),
+ ( 1,'RECEIVED',120.000, 285.00,0,NULL,'delivery',3,1,'DR-77510 partial');
 
 -- ---------------------------------------------------------------------------
 -- issuance: stock leaving for a project
 -- ---------------------------------------------------------------------------
 INSERT INTO material_issues (id, issue_no, request_id, project_id, issue_date, issued_by, received_by, total_cost, status) VALUES
- (1,'IS-2026-0001',1,1,'2026-09-19',4,'Foreman Delfin Rosales', 75225.00,'posted'),
- (2,'IS-2026-0002',2,1,'2026-10-09',4,'Foreman Delfin Rosales', 45360.00,'posted'),
- (3,'IS-2026-0003',3,2,'2026-10-02',4,'Electrician Boyet Lim' , 17570.00,'posted');
+ (1,'IS-2026-0001',1,1,'2026-09-19',1,'Foreman Delfin Rosales', 75225.00,'posted'),
+ (2,'IS-2026-0002',2,1,'2026-10-09',1,'Foreman Delfin Rosales', 45360.00,'posted'),
+ (3,'IS-2026-0003',3,2,'2026-10-02',1,'Electrician Boyet Lim' , 17570.00,'posted');
 
 INSERT INTO material_issue_items (issue_id, request_item_id, material_id, qty_issued, unit_cost) VALUES
  (1,1, 1,120.000, 285.00),
@@ -277,23 +275,23 @@ INSERT INTO material_issue_items (issue_id, request_item_id, material_id, qty_is
 INSERT INTO inventory_transactions
  (material_id, txn_type, quantity, unit_cost, balance_after, project_id, reference_type, reference_id, performed_by, remarks)
 VALUES
- ( 1,'ISSUED',-120.000, 285.00,0,1,'issue',1,4,'IS-2026-0001'),
- ( 2,'ISSUED', -10.000,1200.00,0,1,'issue',1,4,'IS-2026-0001'),
- ( 3,'ISSUED', -12.000,1400.00,0,1,'issue',1,4,'IS-2026-0001'),
- ( 6,'ISSUED', -60.000, 180.00,0,1,'issue',1,4,'IS-2026-0001'),
- ( 9,'ISSUED', -15.000,  95.00,0,1,'issue',1,4,'IS-2026-0001'),
- ( 7,'ISSUED', -60.000, 262.00,0,1,'issue',2,4,'IS-2026-0002'),
- (10,'ISSUED', -80.000, 150.00,0,1,'issue',2,4,'IS-2026-0002'),
- (12,'ISSUED', -18.000, 980.00,0,1,'issue',2,4,'IS-2026-0002'),
- (13,'ISSUED',  -4.000,2800.00,0,2,'issue',3,4,'IS-2026-0003'),
- (14,'ISSUED', -40.000,  85.00,0,2,'issue',3,4,'IS-2026-0003'),
- (15,'ISSUED', -18.000, 165.00,0,2,'issue',3,4,'IS-2026-0003');
+ ( 1,'ISSUED',-120.000, 285.00,0,1,'issue',1,1,'IS-2026-0001'),
+ ( 2,'ISSUED', -10.000,1200.00,0,1,'issue',1,1,'IS-2026-0001'),
+ ( 3,'ISSUED', -12.000,1400.00,0,1,'issue',1,1,'IS-2026-0001'),
+ ( 6,'ISSUED', -60.000, 180.00,0,1,'issue',1,1,'IS-2026-0001'),
+ ( 9,'ISSUED', -15.000,  95.00,0,1,'issue',1,1,'IS-2026-0001'),
+ ( 7,'ISSUED', -60.000, 262.00,0,1,'issue',2,1,'IS-2026-0002'),
+ (10,'ISSUED', -80.000, 150.00,0,1,'issue',2,1,'IS-2026-0002'),
+ (12,'ISSUED', -18.000, 980.00,0,1,'issue',2,1,'IS-2026-0002'),
+ (13,'ISSUED',  -4.000,2800.00,0,2,'issue',3,1,'IS-2026-0003'),
+ (14,'ISSUED', -40.000,  85.00,0,2,'issue',3,1,'IS-2026-0003'),
+ (15,'ISSUED', -18.000, 165.00,0,2,'issue',3,1,'IS-2026-0003');
 
 -- ---------------------------------------------------------------------------
 -- return: 6 sheets of plywood come back, 2 of them damaged
 -- ---------------------------------------------------------------------------
 INSERT INTO material_returns (id, return_no, project_id, issue_id, return_date, returned_by, accepted_by, condition_note, status) VALUES
- (1,'RT-2026-0001',1,2,'2026-10-21','Foreman Delfin Rosales',4,'Forms stripped early; 2 sheets warped by rain','posted');
+ (1,'RT-2026-0001',1,2,'2026-10-21','Foreman Delfin Rosales',1,'Forms stripped early; 2 sheets warped by rain','posted');
 
 INSERT INTO material_return_items (return_id, material_id, qty_returned, unit_cost, disposition) VALUES
  (1,12,4.000,980.00,'reusable'),
@@ -302,7 +300,7 @@ INSERT INTO material_return_items (return_id, material_id, qty_returned, unit_co
 INSERT INTO inventory_transactions
  (material_id, txn_type, quantity, unit_cost, balance_after, project_id, reference_type, reference_id, performed_by, remarks)
 VALUES
- (12,'RETURNED', 4.000, 980.00,0,1,'return',1,4,'RT-2026-0001 reusable');
+ (12,'RETURNED', 4.000, 980.00,0,1,'return',1,1,'RT-2026-0001 reusable');
 -- No ledger row for the 2 warped sheets: they left stock when they were issued
 -- and never came back. They stay charged to the project, which is how wastage
 -- shows up in v_project_material_variance. The DAMAGED type is for goods that
@@ -312,7 +310,7 @@ VALUES
 -- physical count: the bodega is 3 bags short of what the system says
 -- ---------------------------------------------------------------------------
 INSERT INTO stock_adjustments (id, adjustment_no, count_date, counted_by, approved_by, reason, status) VALUES
- (1,'ADJ-2026-0001','2026-10-31',4,1,'Month-end physical count','posted');
+ (1,'ADJ-2026-0001','2026-10-31',1,1,'Month-end physical count','posted');
 
 INSERT INTO stock_adjustment_items (adjustment_id, material_id, system_qty, counted_qty, remarks) VALUES
  (1, 1,180.000,177.000,'3 bags hardened in storage'),
@@ -322,15 +320,15 @@ INSERT INTO stock_adjustment_items (adjustment_id, material_id, system_qty, coun
 INSERT INTO inventory_transactions
  (material_id, txn_type, quantity, unit_cost, balance_after, project_id, reference_type, reference_id, performed_by, remarks)
 VALUES
- (1,'ADJUSTMENT',-3.000,285.00,0,NULL,'adjustment',1,4,'ADJ-2026-0001 month-end count');
+ (1,'ADJUSTMENT',-3.000,285.00,0,NULL,'adjustment',1,1,'ADJ-2026-0001 month-end count');
 
 -- ---------------------------------------------------------------------------
 -- project expenses  (materials posted from issuances, the rest entered by hand)
 -- ---------------------------------------------------------------------------
 INSERT INTO project_expenses (project_id, category, description, amount, expense_date, source, reference_id, recorded_by) VALUES
- (1,'materials','Material issuance IS-2026-0001', 75225.00,'2026-09-19','material_issue',1,4),
- (1,'materials','Material issuance IS-2026-0002', 45360.00,'2026-10-09','material_issue',2,4),
- (2,'materials','Material issuance IS-2026-0003', 17570.00,'2026-10-02','material_issue',3,4),
+ (1,'materials','Material issuance IS-2026-0001', 75225.00,'2026-09-19','material_issue',1,1),
+ (1,'materials','Material issuance IS-2026-0002', 45360.00,'2026-10-09','material_issue',2,1),
+ (2,'materials','Material issuance IS-2026-0003', 17570.00,'2026-10-02','material_issue',3,1),
  (1,'labor','Masonry crew, September payroll',    96000.00,'2026-09-30','manual',NULL,1),
  (1,'equipment','Concrete mixer rental, 12 days', 18000.00,'2026-10-05','manual',NULL,1),
  (1,'transportation','Hauling of aggregates',      8500.00,'2026-10-07','manual',NULL,1),

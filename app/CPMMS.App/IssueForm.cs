@@ -4,7 +4,7 @@ using CPMMS.Core.Services;
 
 namespace CPMMS.App;
 
-/// <summary>Editable line: what the storekeeper is actually releasing.</summary>
+/// <summary>Editable line: what the administrator is actually releasing.</summary>
 public sealed class IssueEditRow
 {
     public int RequestItemId { get; set; }

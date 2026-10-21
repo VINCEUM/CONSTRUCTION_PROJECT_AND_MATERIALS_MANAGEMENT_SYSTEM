@@ -1,5 +1,5 @@
 # Database Design
-### Construction Project and Material Monitoring System (CPMMS)
+### Construction Project and Materials Monitoring System (CPMMS)
 IT13 · MySQL 8.0 · InnoDB · utf8mb4
 
 ---
@@ -174,7 +174,7 @@ erDiagram
 ### Access control
 | Table | Purpose |
 |---|---|
-| `roles` | Admin, Project Engineer, Storekeeper |
+| `roles` | Admin, Project Engineer |
 | `users` | Accounts; `role_id` decides access. Passwords stored as bcrypt hashes. |
 
 ### Reference data
@@ -228,10 +228,10 @@ erDiagram
 | 6 | Reusable returns go back to stock | `RETURNED` ledger row (positive) |
 | 7 | Damaged goods stay charged to the project | **No** ledger row — the stock already left at issuance; the damage is recorded on `material_return_items.disposition` and shows up as wastage |
 | 8 | A project cannot close with open requests | Application check on status change to `completed` |
-| 9 | Separation of duties | `requested_by ≠ approved_by`; storekeepers cannot approve |
+| 9 | Separation of duties | `requested_by ≠ approved_by`; engineers cannot approve |
 | 10 | No hard deletes | `status` + `void_reason` columns; FKs use `ON DELETE RESTRICT` |
 
-**Concurrency note.** Two storekeepers issuing the last stock at the same time is handled by
+**Concurrency note.** Two issuances of the last stock at the same time is handled by
 locking the material row (`SELECT … FOR UPDATE`) inside the issuance transaction, not by a
 check in the interface. This is worth saying out loud in a defence.
 

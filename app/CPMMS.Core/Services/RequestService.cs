@@ -7,7 +7,7 @@ namespace CPMMS.Core.Services;
 public sealed record DraftLine(int MaterialId, decimal Qty);
 
 /// <summary>
-/// The life of a material request before it reaches the storekeeper:
+/// The life of a material request before it reaches the administrator:
 ///
 ///   draft -> submitted -> approved / rejected   (ApprovalService decides)
 ///   draft | submitted -> cancelled              (requester or admin, reason required)

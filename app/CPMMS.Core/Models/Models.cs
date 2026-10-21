@@ -13,7 +13,6 @@ public class User
 
     public bool IsAdmin => RoleName == "Admin";
     public bool IsEngineer => RoleName == "Project Engineer";
-    public bool IsStorekeeper => RoleName == "Storekeeper";
 }
 
 public class Material
@@ -138,7 +137,7 @@ public class MaterialRequestItem
     public decimal QtyOutstanding => QtyRequested - QtyIssued;
 }
 
-/// <summary>One line the storekeeper is about to release.</summary>
+/// <summary>One line the administrator is about to release.</summary>
 public class IssueLine
 {
     public int MaterialId { get; set; }

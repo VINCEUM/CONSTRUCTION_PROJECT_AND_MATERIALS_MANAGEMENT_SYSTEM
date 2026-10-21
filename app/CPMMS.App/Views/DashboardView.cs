@@ -1,4 +1,5 @@
-    using CPMMS.Core.Services;
+    using CPMMS.Core.Models;
+using CPMMS.Core.Services;
 
 namespace CPMMS.App.Views;
 
@@ -17,8 +18,12 @@ public sealed class DashboardView : UserControl
         Dock = DockStyle.Fill;
         BackColor = Theme.Surface;
 
-        var totals = _catalog.GetDashboardTotals();
-        var mismatches = _inventory.GetLedgerMismatches();
+        // an engineer sees the figures for their own projects only, and none of
+        // the stock-valuation / ledger-integrity information (admin only)
+        var user = AppSession.CurrentUser;
+        var isAdmin = user?.IsAdmin == true;
+        var totals = _catalog.GetDashboardTotals(isAdmin ? null : user?.Id);
+        var mismatches = isAdmin ? _inventory.GetLedgerMismatches() : new List<StockCheckRow>();
         var lowStock = _inventory.GetStockCheck(lowStockOnly: true);
 
         // --- low stock table (fills the rest of the screen) ------------------
@@ -47,12 +52,11 @@ public sealed class DashboardView : UserControl
             WrapContents = false,
             AutoScroll = false
         };
-        cards.Controls.Add(UiKit.Card("Ongoing projects", totals.OngoingProjects.ToString(),
-            $"{totals.ProjectCount} in total"));
         cards.Controls.Add(UiKit.Card("Contract value", "₱" + totals.TotalContractValue.ToString("N0"),
-            "ongoing and planned"));
-        cards.Controls.Add(UiKit.Card("Stock value", "₱" + totals.StockValue.ToString("N0"),
-            $"{totals.MaterialCount} materials"));
+            isAdmin ? "ongoing and planned" : "your assigned projects"));
+        if (isAdmin)
+            cards.Controls.Add(UiKit.Card("Stock value", "₱" + totals.StockValue.ToString("N0"),
+                $"{totals.MaterialCount} materials"));
         cards.Controls.Add(UiKit.Card("Low stock", totals.LowStockCount.ToString(),
             "at or below reorder point",
             totals.LowStockCount > 0 ? Theme.Warn : Theme.Good));
@@ -71,7 +75,7 @@ public sealed class DashboardView : UserControl
 
         Controls.Add(gridHost);
         Controls.Add(lowTitle);
-        Controls.Add(banner);
+        if (isAdmin) Controls.Add(banner);
         Controls.Add(cards);
     }
 }

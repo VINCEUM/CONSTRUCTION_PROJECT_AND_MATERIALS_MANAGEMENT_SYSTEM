@@ -9,13 +9,18 @@ public sealed class ProjectsView : UserControl
     private readonly MaintenanceService _maintenance = new();
     private readonly DataGridView grid = UiKit.Grid();
     private readonly Button _edit;
+    private readonly bool _isAdmin;
 
     public ProjectsView()
     {
         Dock = DockStyle.Fill;
         BackColor = Theme.Surface;
 
-        var bar = new Panel { Dock = DockStyle.Top, Height = 46, BackColor = Theme.Surface };
+        // only the Administrator creates and edits projects; an engineer just
+        // reads the projects assigned to them
+        _isAdmin = AppSession.CurrentUser?.IsAdmin == true;
+
+        var bar = new Panel { Dock = DockStyle.Top, Height = _isAdmin ? 46 : 0, BackColor = Theme.Surface };
         var add = UiKit.Secondary("Add project...");
         add.Location = new Point(0, 8);
         add.Click += (_, _) => EditProject(null);
@@ -24,6 +29,8 @@ public sealed class ProjectsView : UserControl
         _edit.Location = new Point(126, 8);
         _edit.Click += (_, _) => EditProject((grid.CurrentRow?.DataBoundItem as ProjectCostRow)?.Id);
 
+        add.Visible = _isAdmin;
+        _edit.Visible = _isAdmin;
         bar.Controls.Add(_edit);
         bar.Controls.Add(add);
 
@@ -51,7 +58,7 @@ public sealed class ProjectsView : UserControl
         var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
         grid.CellDoubleClick += (_, e) =>
         {
-            if (e.RowIndex >= 0) EditProject((grid.CurrentRow?.DataBoundItem as ProjectCostRow)?.Id);
+            if (_isAdmin && e.RowIndex >= 0) EditProject((grid.CurrentRow?.DataBoundItem as ProjectCostRow)?.Id);
         };
         host.Controls.Add(grid);
 
@@ -65,7 +72,7 @@ public sealed class ProjectsView : UserControl
 
     private void Reload()
     {
-        UiKit.Bind(grid, _catalog.GetProjectCosts(),
+        UiKit.Bind(grid, _catalog.GetProjectCosts(_isAdmin ? null : AppSession.CurrentUser?.Id),
             ("Code", "CODE", null),
             ("Name", "PROJECT", null),
             ("ClientName", "CLIENT", null),

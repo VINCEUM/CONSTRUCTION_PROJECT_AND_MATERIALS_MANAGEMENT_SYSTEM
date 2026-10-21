@@ -1,4 +1,4 @@
-# Construction Project and Material Monitoring System (CPMMS)
+# Construction Project and Materials Monitoring System (CPMMS)
 IT13 · C# / .NET 9 WinForms · MySQL 8
 
 Tracks what a construction project **planned** to consume against what it **actually**
@@ -71,10 +71,9 @@ All demo passwords are `password`.
 
 | Role | Email | Can do |
 |---|---|---|
-| Admin | admin@buildcorp.test | Users, suppliers, approvals, reports, settings |
+| Admin | admin@buildcorp.test | Users, suppliers, approvals, purchasing, receiving, issuing, stock adjustments, reports |
 | Project Engineer | karla.dizon@buildcorp.test | Projects, tasks, estimates, requests, progress |
 | Project Engineer | nico.alcantara@buildcorp.test | Same, second project |
-| Storekeeper | mario.sagun@buildcorp.test | Receiving, issuance, returns, physical count |
 
 ## What the seed data already shows
 
@@ -139,7 +138,7 @@ transaction**:
 7. advances `qty_issued` on the request lines and moves the request status
 8. posts the cost to `project_expenses` and writes an `activity_logs` entry
 
-Step 2 is what makes two storekeepers issuing the last 10 bags at the same time safe — the
+Step 2 is what makes two issuances of the last 10 bags at the same time safe — the
 second one waits for the lock, then fails the stock check honestly instead of driving stock
 negative.
 

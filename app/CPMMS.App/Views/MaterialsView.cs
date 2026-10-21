@@ -53,6 +53,12 @@ public sealed class MaterialsView : UserControl
         _count.Location = new Point(688, 14);
         _count.Size = new Size(300, 20);
 
+        // the materials master list is maintained by the Administrator; an
+        // engineer can look materials and stock up but not change them
+        var isAdmin = AppSession.CurrentUser?.IsAdmin == true;
+        add.Visible = isAdmin;
+        _edit.Visible = isAdmin;
+
         bar.Controls.Add(_edit);
         bar.Controls.Add(add);
         bar.Controls.Add(_count);

@@ -36,7 +36,8 @@ public sealed class CatalogService
         return cn.Query<Material>(sql, new { like = $"%{search}%" }).ToList();
     }
 
-    public IReadOnlyList<Project> GetProjects(string? status = null)
+    /// <param name="engineerId">When set, only the projects assigned to that Project Engineer.</param>
+    public IReadOnlyList<Project> GetProjects(string? status = null, int? engineerId = null)
     {
         if (DemoMode.Enabled)
             return DemoData.Projects.Where(p => status is null || p.Status == status).ToList();
@@ -47,11 +48,13 @@ public sealed class CatalogService
                     LEFT   JOIN users u ON u.id = p.project_engineer_id
                     WHERE  1 = 1";
         if (!string.IsNullOrWhiteSpace(status)) sql += " AND p.status = @status";
+        if (engineerId is not null) sql += " AND p.project_engineer_id = @engineerId";
         sql += " ORDER BY p.start_date DESC";
-        return cn.Query<Project>(sql, new { status }).ToList();
+        return cn.Query<Project>(sql, new { status, engineerId }).ToList();
     }
 
-    public IReadOnlyList<ProjectCostRow> GetProjectCosts()
+    /// <param name="engineerId">When set, only the projects assigned to that Project Engineer.</param>
+    public IReadOnlyList<ProjectCostRow> GetProjectCosts(int? engineerId = null)
     {
         if (DemoMode.Enabled) return DemoData.ProjectCosts;
 
@@ -60,7 +63,10 @@ public sealed class CatalogService
             @"SELECT id, code, name, client_name, status, contract_amount, material_budget,
                      material_cost_to_date, other_expenses, material_budget_remaining, progress_percent
               FROM   v_project_cost_summary
-              ORDER  BY FIELD(status,'ongoing','planning','on_hold','completed','cancelled'), code").ToList();
+              WHERE  (@engineerId IS NULL
+                      OR id IN (SELECT p.id FROM projects p WHERE p.project_engineer_id = @engineerId))
+              ORDER  BY FIELD(status,'ongoing','planning','on_hold','completed','cancelled'), code",
+            new { engineerId }).ToList();
     }
 
     public IReadOnlyList<VarianceRow> GetVariance(int? projectId = null, decimal? minPercent = null)
@@ -80,7 +86,8 @@ public sealed class CatalogService
         return cn.Query<VarianceRow>(sql, new { projectId, minPercent }).ToList();
     }
 
-    public IReadOnlyList<MaterialRequest> GetRequests(string? status = null)
+    /// <param name="engineerId">When set, only requests for projects assigned to that Project Engineer.</param>
+    public IReadOnlyList<MaterialRequest> GetRequests(string? status = null, int? engineerId = null)
     {
         if (DemoMode.Enabled)
             return DemoData.Requests.Where(r => status is null || r.Status == status).ToList();
@@ -92,8 +99,9 @@ public sealed class CatalogService
                     JOIN   users u ON u.id = r.requested_by
                     WHERE  1 = 1";
         if (!string.IsNullOrWhiteSpace(status)) sql += " AND r.status = @status";
+        if (engineerId is not null) sql += " AND p.project_engineer_id = @engineerId";
         sql += " ORDER BY r.request_date DESC, r.id DESC";
-        return cn.Query<MaterialRequest>(sql, new { status }).ToList();
+        return cn.Query<MaterialRequest>(sql, new { status, engineerId }).ToList();
     }
 
     public IReadOnlyList<MaterialRequestItem> GetRequestItems(int requestId)
@@ -150,7 +158,8 @@ public sealed class CatalogService
             new { poId }).ToList();
     }
 
-    public DashboardTotals GetDashboardTotals()
+    /// <param name="engineerId">When set, the project and request figures cover only that engineer's projects.</param>
+    public DashboardTotals GetDashboardTotals(int? engineerId = null)
     {
         if (DemoMode.Enabled) return DemoData.Totals();
 
@@ -162,8 +171,13 @@ public sealed class CatalogService
                 (SELECT COUNT(*) FROM materials WHERE status = 'active')         AS material_count,
                 (SELECT COUNT(*) FROM suppliers WHERE status = 'active')         AS supplier_count,
                 (SELECT COUNT(*) FROM materials WHERE current_stock <= minimum_stock) AS low_stock_count,
-                (SELECT COUNT(*) FROM material_requests WHERE status = 'submitted')   AS pending_requests,
-                (SELECT COALESCE(SUM(contract_amount),0) FROM projects WHERE status IN ('ongoing','planning')) AS total_contract_value,
-                (SELECT COALESCE(SUM(current_stock * last_unit_cost),0) FROM materials) AS stock_value");
+                (SELECT COUNT(*) FROM material_requests r JOIN projects p ON p.id = r.project_id
+                  WHERE r.status = 'submitted'
+                    AND (@engineerId IS NULL OR p.project_engineer_id = @engineerId)) AS pending_requests,
+                (SELECT COALESCE(SUM(contract_amount),0) FROM projects
+                  WHERE status IN ('ongoing','planning')
+                    AND (@engineerId IS NULL OR project_engineer_id = @engineerId)) AS total_contract_value,
+                (SELECT COALESCE(SUM(current_stock * last_unit_cost),0) FROM materials) AS stock_value",
+            new { engineerId });
     }
 }

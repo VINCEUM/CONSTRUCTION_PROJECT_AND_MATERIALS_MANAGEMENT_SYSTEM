@@ -128,7 +128,7 @@ namespace CPMMS.App
             this.MinimumSize = new System.Drawing.Size(1080, 640);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Construction Project and Material Monitoring System";
+            this.Text = "Construction Project and Materials Monitoring System";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.panelNav.ResumeLayout(false);

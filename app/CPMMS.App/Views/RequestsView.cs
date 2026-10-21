@@ -50,11 +50,14 @@ public sealed class RequestsView : UserControl
 
         var afterNew = canCreate ? _new.Left + _new.GetPreferredSize(Size.Empty).Width + 8 : 212;
 
+        // issuing materials is an Administrator job
+        var canIssue = user?.IsAdmin == true;
         _issue = UiKit.Secondary("Issue materials…");
         _issue.Location = new Point(afterNew, 7);
+        _issue.Visible = canIssue;
         _issue.Click += (_, _) => IssueMaterials();
 
-        var next = _issue.Left + _issue.GetPreferredSize(Size.Empty).Width + 8;
+        var next = canIssue ? _issue.Left + _issue.GetPreferredSize(Size.Empty).Width + 8 : afterNew;
 
         _approve = UiKit.Secondary("Approve");
         _approve.ForeColor = Theme.Accent;
@@ -72,7 +75,7 @@ public sealed class RequestsView : UserControl
         _reject.Enabled = false;
         _reject.Click += (_, _) => RejectSelected();
 
-        var afterReject = _reject.Left + _reject.GetPreferredSize(Size.Empty).Width + 8;
+        var afterReject = canDecide ? _reject.Left + _reject.GetPreferredSize(Size.Empty).Width + 8 : next;
 
         _submit = UiKit.Secondary("Submit…");
         _submit.Location = new Point(afterReject, 7);
@@ -119,7 +122,8 @@ public sealed class RequestsView : UserControl
     private void LoadRequests()
     {
         var status = _status.SelectedIndex <= 0 ? null : _status.SelectedItem?.ToString();
-        var rows = _catalog.GetRequests(status);
+        var user = AppSession.CurrentUser;
+        var rows = _catalog.GetRequests(status, user?.IsAdmin == true ? null : user?.Id);
         _issue.Enabled = rows.Count > 0;
 
         UiKit.Bind(_requests, rows,
@@ -208,7 +212,7 @@ public sealed class RequestsView : UserControl
 
         if (MessageBox.Show(this,
                 $"Approve {request.RequestNo} for {request.ProjectName}?\n\n"
-                + "The storekeeper will then be able to issue the materials.",
+                + "The administrator will then be able to issue the materials.",
                 "Approve request", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
 
         try
@@ -275,9 +279,9 @@ public sealed class RequestsView : UserControl
         if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
 
         var user = AppSession.Require;
-        if (!(user.IsStorekeeper || user.IsAdmin))
+        if (!user.IsAdmin)
         {
-            MessageBox.Show(this, "Only a storekeeper or an admin can release materials.",
+            MessageBox.Show(this, "Only an administrator can release materials.",
                 "CPMMS", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }

@@ -1,5 +1,5 @@
 -- ============================================================================
---  Construction Project and Material Monitoring System (CPMMS)
+--  Construction Project and Materials Monitoring System (CPMMS)
 --  IT13 · Database schema · MySQL 8.0
 --
 --  Design principles
@@ -24,7 +24,7 @@ USE construction_mms;
 
 CREATE TABLE roles (
   id              TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  name            VARCHAR(40)  NOT NULL UNIQUE,   -- Admin, Project Engineer, Storekeeper
+  name            VARCHAR(40)  NOT NULL UNIQUE,   -- Admin, Project Engineer
   description     VARCHAR(160) NULL,
   created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -299,7 +299,7 @@ CREATE TABLE material_issues (
   request_id      INT UNSIGNED NOT NULL,            -- issuance always answers an approved request
   project_id      INT UNSIGNED NOT NULL,
   issue_date      DATE NOT NULL,
-  issued_by       INT UNSIGNED NOT NULL,            -- storekeeper
+  issued_by       INT UNSIGNED NOT NULL,            -- admin
   received_by     VARCHAR(120) NOT NULL,            -- person on site who signed for it
   total_cost      DECIMAL(14,2) NOT NULL DEFAULT 0.00,
   status          ENUM('posted','voided') NOT NULL DEFAULT 'posted',
@@ -334,7 +334,7 @@ CREATE TABLE material_returns (
   issue_id        INT UNSIGNED NULL,                -- what it came from, when known
   return_date     DATE NOT NULL,
   returned_by     VARCHAR(120) NOT NULL,            -- person from site
-  accepted_by     INT UNSIGNED NOT NULL,            -- storekeeper
+  accepted_by     INT UNSIGNED NOT NULL,            -- admin
   condition_note  VARCHAR(255) NULL,
   status          ENUM('posted','voided') NOT NULL DEFAULT 'posted',
   created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

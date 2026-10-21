@@ -202,7 +202,7 @@ public static class DemoData
             BalanceAfter = balance, ProjectId = projectId, ReferenceType = refType, Remarks = remarks,
             CreatedAt = when, MaterialName = m.Name,
             ProjectName = projectId is null ? null : Projects.First(p => p.Id == projectId).Name,
-            PerformedByName = "Mario B. Sagun"
+            PerformedByName = "Engr. Ramon T. Villareal"
         };
     }
 
@@ -427,6 +427,5 @@ public static class DemoData
         new() { Id=1, RoleId=1, FullName="Engr. Ramon T. Villareal", Email="admin@buildcorp.test",       RoleName="Admin" },
         new() { Id=2, RoleId=2, FullName="Engr. Karla M. Dizon",     Email="karla.dizon@buildcorp.test", RoleName="Project Engineer" },
         new() { Id=3, RoleId=2, FullName="Engr. Nico P. Alcantara",  Email="nico.alcantara@buildcorp.test", RoleName="Project Engineer" },
-        new() { Id=4, RoleId=3, FullName="Mario B. Sagun",           Email="mario.sagun@buildcorp.test", RoleName="Storekeeper" },
     };
 }

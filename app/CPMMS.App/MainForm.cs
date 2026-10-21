@@ -40,10 +40,13 @@ public partial class MainForm : Form
         AddNav("Projects", () => new ProjectsView());
         AddNav("Materials", () => new MaterialsView());
         AddNav("Material Requests", () => new RequestsView());
-        AddNav("Purchase Orders", () => new PurchaseOrdersView());
-        AddNav("Variance Report", () => new VarianceView());
-        AddNav("Suppliers", () => new SuppliersView());
-        if (user.IsAdmin) AddNav("Users", () => new UsersView());
+        // procurement, suppliers and accounts belong to the Administrator only
+        if (user.IsAdmin)
+        {
+            AddNav("Purchase Orders", () => new PurchaseOrdersView());
+            AddNav("Suppliers", () => new SuppliersView());
+            AddNav("Users", () => new UsersView());
+        }
 
         if (_navButtons.Count > 0) _navButtons[0].PerformClick();
     }
