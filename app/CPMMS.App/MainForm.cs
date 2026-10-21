@@ -38,6 +38,7 @@ public partial class MainForm : Form
         // Nav is built in code so items can be added or hidden per role.
         AddNav("Dashboard", () => new DashboardView());
         AddNav("Projects", () => new ProjectsView());
+        AddNav("Monitoring", () => new MonitoringView());
         AddNav("Materials", () => new MaterialsView());
         AddNav("Material Requests", () => new RequestsView());
         // procurement, suppliers and accounts belong to the Administrator only

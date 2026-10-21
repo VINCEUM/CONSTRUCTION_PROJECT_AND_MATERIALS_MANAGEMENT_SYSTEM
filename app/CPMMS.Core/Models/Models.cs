@@ -260,3 +260,33 @@ public class Role
     public string? Description { get; set; }
     public override string ToString() => Name;
 }
+
+/// <summary>One scheduled piece of a project (Excavation, Foundation, Roofing...).</summary>
+public class ProjectTask
+{
+    public int Id { get; set; }
+    public int ProjectId { get; set; }
+    public string Name { get; set; } = "";
+    public decimal WeightPercent { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? DueDate { get; set; }
+    public decimal ProgressPercent { get; set; }
+    public string Status { get; set; } = "not_started";
+    public string? Remarks { get; set; }
+}
+
+/// <summary>One line of a project's Bill of Quantities: how much of a material it should use.</summary>
+public class ProjectEstimate
+{
+    public int Id { get; set; }
+    public int ProjectId { get; set; }
+    public int? TaskId { get; set; }
+    public string? TaskName { get; set; }
+    public int MaterialId { get; set; }
+    public string MaterialCode { get; set; } = "";
+    public string MaterialName { get; set; } = "";
+    public string Unit { get; set; } = "";
+    public decimal PlannedQty { get; set; }
+    public decimal PlannedUnitCost { get; set; }
+    public decimal PlannedCost { get; set; }
+}
