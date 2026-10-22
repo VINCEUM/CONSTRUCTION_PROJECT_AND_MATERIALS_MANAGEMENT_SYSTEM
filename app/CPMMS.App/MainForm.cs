@@ -46,6 +46,7 @@ public partial class MainForm : Form
         {
             AddNav("Purchase Orders", () => new PurchaseOrdersView());
             AddNav("Suppliers", () => new SuppliersView());
+            AddNav("Stock Control", () => new StockControlView());
             AddNav("Users", () => new UsersView());
         }
 

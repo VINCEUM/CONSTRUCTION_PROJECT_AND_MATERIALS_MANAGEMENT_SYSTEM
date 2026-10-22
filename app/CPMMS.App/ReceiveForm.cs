@@ -26,6 +26,7 @@ public sealed class ReceiveForm : Form
     private readonly BindingList<ReceiveEditRow> _rows;
     private readonly DataGridView _grid = UiKit.Grid();
     private readonly TextBox _drNo = new();
+    private readonly TextBox _photo = new();
     private readonly DateTimePicker _date = new();
     private readonly Label _total = new();
     private readonly Label _error = new();
@@ -61,7 +62,7 @@ public sealed class ReceiveForm : Form
         }).ToList());
 
         // ---- header ---------------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 96, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
+        var header = new Panel { Dock = DockStyle.Top, Height = 132, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
         var title = new Label
         {
             Text = $"{po.PoNo}  ·  {po.SupplierName}",
@@ -90,6 +91,25 @@ public sealed class ReceiveForm : Form
 
         fields.Controls.AddRange(new Control[] { lblDr, _drNo, lblDate, _date });
 
+        // proof of delivery (a photo of the signed receipt or the load) and who received it
+        var proof = new Panel { Dock = DockStyle.Top, Height = 34 };
+        var lblPhoto = new Label { Text = "Delivery photo", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
+        _photo.Location = new Point(lblPhoto.Right + 12, 4);
+        _photo.Width = 320;
+        _photo.BorderStyle = BorderStyle.FixedSingle;
+        _photo.ReadOnly = true;
+        _photo.PlaceholderText = "optional — attach a photo (JPG or PNG)";
+        var browse = UiKit.Secondary("Browse…");
+        browse.Location = new Point(_photo.Right + 8, 2);
+        browse.Click += (_, _) => BrowsePhoto();
+        var lblRecipient = new Label
+        {
+            Text = $"Received by  {AppSession.Require.FullName}", Font = Theme.Body, ForeColor = Theme.InkSoft,
+            Location = new Point(browse.Right + 24, 8), AutoSize = true
+        };
+        proof.Controls.AddRange(new Control[] { lblPhoto, _photo, browse, lblRecipient });
+
+        header.Controls.Add(proof);
         header.Controls.Add(fields);
         header.Controls.Add(sub);
         header.Controls.Add(title);
@@ -205,11 +225,13 @@ public sealed class ReceiveForm : Form
         if (lines.Count == 0) { _error.Text = "Set a quantity on at least one line."; return; }
         if (string.IsNullOrWhiteSpace(_drNo.Text)) { _error.Text = "Enter the supplier's DR number."; _drNo.Focus(); return; }
 
+        string? photoPath = null;
         try
         {
             Cursor = Cursors.WaitCursor;
+            photoPath = SavePhoto();
             new InventoryService().ReceiveDelivery(
-                _po.Id, _drNo.Text.Trim(), _date.Value.Date, AppSession.Require.Id, null, lines);
+                _po.Id, _drNo.Text.Trim(), _date.Value.Date, AppSession.Require.Id, photoPath, lines);
 
             MessageBox.Show(this,
                 $"Received {lines.Count} line(s) against {_po.PoNo}.\n\n" +
@@ -221,11 +243,50 @@ public sealed class ReceiveForm : Form
         }
         catch (Exception ex)
         {
+            // the delivery was not posted, so don't leave its photo lying around
+            if (photoPath is not null)
+            {
+                try { File.Delete(Path.Combine(AppContext.BaseDirectory, photoPath)); } catch { /* best effort */ }
+            }
             _error.Text = "Could not post: " + ex.Message;
         }
         finally
         {
             Cursor = Cursors.Default;
         }
+    }
+
+    private void BrowsePhoto()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Choose a photo of the delivery",
+            Filter = "Photos (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png"
+        };
+        if (dialog.ShowDialog(this) == DialogResult.OK) _photo.Text = dialog.FileName;
+    }
+
+    /// <summary>Copies the chosen photo into the app's uploads folder and returns its relative path (or null if none).</summary>
+    private string? SavePhoto()
+    {
+        if (string.IsNullOrWhiteSpace(_photo.Text)) return null;
+
+        var source = _photo.Text;
+        if (!File.Exists(source)) throw new InvalidOperationException("The chosen photo can't be found any more.");
+
+        var extension = Path.GetExtension(source).ToLowerInvariant();
+        if (extension is not (".jpg" or ".jpeg" or ".png"))
+            throw new InvalidOperationException("The photo must be a JPG or PNG file.");
+        if (new FileInfo(source).Length > 10 * 1024 * 1024)
+            throw new InvalidOperationException("The photo is larger than 10 MB. Choose a smaller one.");
+
+        var safeDr = string.Concat(_drNo.Text.Trim().Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+        var fileName = $"{_po.PoNo}_{safeDr}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
+        var relative = Path.Combine("uploads", "deliveries", fileName);
+
+        var folder = Path.Combine(AppContext.BaseDirectory, "uploads", "deliveries");
+        Directory.CreateDirectory(folder);
+        File.Copy(source, Path.Combine(AppContext.BaseDirectory, relative), overwrite: false);
+        return relative.Replace('\\', '/');
     }
 }
