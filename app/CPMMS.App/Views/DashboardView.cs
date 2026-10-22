@@ -33,15 +33,16 @@ public sealed class DashboardView : UserControl
             ("Name", "MATERIAL", null),
             ("Unit", "UNIT", null),
             ("CachedStock", "ON HAND", "N2"),
-            ("MinimumStock", "REORDER AT", "N2"));
+            ("MinimumStock", "REORDER AT", "N2"),
+            ("Shortfall", "SHORT BY", "N2"));
 
         var gridHost = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };
         gridHost.Controls.Add(grid);
 
         var lowTitle = UiKit.SectionTitle(
             lowStock.Count == 0
-                ? "Low stock — nothing needs reordering"
-                : $"Low stock — {lowStock.Count} material(s) at or below the reorder point");
+                ? "Reorder — nothing is at or below its reorder point"
+                : $"Reorder required — {lowStock.Count} material(s) at or below the reorder point. An engineer requests them; the administrator approves and orders.");
 
         // --- KPI cards -------------------------------------------------------
         var cards = new FlowLayoutPanel

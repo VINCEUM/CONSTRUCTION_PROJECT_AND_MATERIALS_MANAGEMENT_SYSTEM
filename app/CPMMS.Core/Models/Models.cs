@@ -44,6 +44,8 @@ public class StockCheckRow
     public decimal Difference { get; set; }
     public decimal MinimumStock { get; set; }
     public int IsLowStock { get; set; }
+    /// <summary>How far below the reorder point the stock is (0 when it is above it).</summary>
+    public decimal Shortfall => Math.Max(0, MinimumStock - CachedStock);
 }
 
 public class Project

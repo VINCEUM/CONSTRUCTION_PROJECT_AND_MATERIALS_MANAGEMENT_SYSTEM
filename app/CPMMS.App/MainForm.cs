@@ -39,6 +39,7 @@ public partial class MainForm : Form
         AddNav("Dashboard", () => new DashboardView());
         AddNav("Projects", () => new ProjectsView());
         AddNav("Monitoring", () => new MonitoringView());
+        AddNav("Reports", () => new ReportsView());
         AddNav("Materials", () => new MaterialsView());
         AddNav("Material Requests", () => new RequestsView());
         // procurement, suppliers and accounts belong to the Administrator only
@@ -47,6 +48,7 @@ public partial class MainForm : Form
             AddNav("Purchase Orders", () => new PurchaseOrdersView());
             AddNav("Suppliers", () => new SuppliersView());
             AddNav("Stock Control", () => new StockControlView());
+            AddNav("Activity Log", () => new ActivityLogView());
             AddNav("Users", () => new UsersView());
         }
 

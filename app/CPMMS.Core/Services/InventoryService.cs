@@ -138,6 +138,8 @@ public sealed class InventoryService
                         remarks = issueNo
                     }, tx);
 
+                LogReorderIfCrossed(cn, tx, line.MaterialId, newBalance + line.Qty, newBalance, issuedByUserId);
+
                 if (line.RequestItemId is int requestItemId)
                 {
                     cn.Execute(
@@ -409,6 +411,8 @@ public sealed class InventoryService
                 cn.Execute("UPDATE materials SET current_stock = @counted WHERE id = @materialId",
                     new { counted = line.CountedQty, line.MaterialId }, tx);
 
+                if (variance < 0) LogReorderIfCrossed(cn, tx, line.MaterialId, stock, line.CountedQty, countedByUserId);
+
                 cn.Execute(
                     @"INSERT INTO inventory_transactions
                         (material_id, txn_type, quantity, unit_cost, balance_after, project_id,
@@ -435,6 +439,33 @@ public sealed class InventoryService
         {
             tx.Rollback();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// The automatic reorder trigger. The moment a material's stock falls to its
+    /// minimum (or below), a 'reorder' entry is written to the activity log so the
+    /// Administrator can see it. No purchase order is created automatically: an
+    /// engineer requests, the Administrator approves and orders.
+    /// </summary>
+    private static void LogReorderIfCrossed(MySqlConnection cn, MySqlTransaction tx,
+                                            int materialId, decimal before, decimal after, int userId)
+    {
+        var info = cn.QuerySingleOrDefault<(string Name, decimal Minimum)>(
+            "SELECT name AS Name, minimum_stock AS Minimum FROM materials WHERE id = @materialId",
+            new { materialId }, tx);
+        if (info.Name is null) return;
+
+        if (before > info.Minimum && after <= info.Minimum)
+        {
+            cn.Execute(
+                @"INSERT INTO activity_logs (user_id, action, entity_type, entity_id, description)
+                  VALUES (@userId, 'reorder', 'material', @materialId, @description)",
+                new
+                {
+                    userId, materialId,
+                    description = $"{info.Name} fell to {after:N2} (reorder point {info.Minimum:N2}) - reorder required"
+                }, tx);
         }
     }
 
