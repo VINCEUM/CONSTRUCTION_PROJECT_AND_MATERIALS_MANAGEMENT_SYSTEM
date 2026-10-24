@@ -14,7 +14,7 @@ public partial class LoginForm : Form
 
     private void LoginForm_Load(object? sender, EventArgs e)
     {
-        txtEmail.Text = "admin@buildcorp.test";
+        txtEmail.Text = "";
         txtPassword.Text = "";
         txtEmail.Focus();
 

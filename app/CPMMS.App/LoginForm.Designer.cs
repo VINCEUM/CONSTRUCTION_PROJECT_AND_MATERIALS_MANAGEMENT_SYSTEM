@@ -172,7 +172,7 @@ namespace CPMMS.App
             this.lblHint.Name = "lblHint";
             this.lblHint.Size = new System.Drawing.Size(324, 34);
             this.lblHint.TabIndex = 9;
-            this.lblHint.Text = "Demo: admin@buildcorp.test / password";
+            this.lblHint.Text = "";
             //
             // LoginForm
             //
