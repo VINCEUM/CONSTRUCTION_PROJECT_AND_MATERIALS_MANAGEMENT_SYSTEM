@@ -45,6 +45,59 @@ public sealed class PurchaseOrderService
             "SELECT * FROM suppliers WHERE status = 'active' ORDER BY company_name");
     }
 
+    // ------------------------------------------------------------ cancel
+
+    /// <summary>
+    /// Cancels a purchase order that has not received anything yet, freeing its
+    /// request to be ordered again (or voided). The record stays, with the reason.
+    /// </summary>
+    public void Cancel(User user, int poId, string reason)
+    {
+        if (DemoMode.Enabled) throw new InvalidOperationException(NoDemo);
+        if (!user.IsAdmin) throw new InvalidOperationException("Only an administrator can cancel a purchase order.");
+
+        reason = (reason ?? "").Trim();
+        if (reason.Length == 0) throw new InvalidOperationException("Give a reason for cancelling the purchase order.");
+        if (reason.Length > 200) throw new InvalidOperationException("Keep the reason under 200 characters.");
+
+        using var cn = DatabaseHelper.Open();
+        using var tx = cn.BeginTransaction();
+        try
+        {
+            var po = cn.QuerySingleOrDefault<(string PoNo, string Status)>(
+                "SELECT po_no AS PoNo, status AS Status FROM purchase_orders WHERE id = @poId FOR UPDATE",
+                new { poId }, tx);
+            if (po.PoNo is null) throw new InvalidOperationException("That purchase order no longer exists.");
+            if (po.Status is not ("draft" or "sent"))
+                throw new InvalidOperationException(
+                    $"{po.PoNo} is '{po.Status}'. Only an order that has not received anything yet can be cancelled.");
+
+            var received = cn.ExecuteScalar<decimal>(
+                "SELECT COALESCE(SUM(qty_received), 0) FROM purchase_order_items WHERE po_id = @poId", new { poId }, tx);
+            if (received > 0)
+                throw new InvalidOperationException($"{po.PoNo} already received materials, so it cannot be cancelled.");
+
+            cn.Execute(
+                @"UPDATE purchase_orders
+                  SET    status = 'cancelled',
+                         remarks = LEFT(CONCAT(COALESCE(NULLIF(remarks, ''), ''), IF(COALESCE(remarks, '') = '', '', ' | '),
+                                               'Cancelled: ', @reason), 255)
+                  WHERE  id = @poId", new { reason, poId }, tx);
+
+            cn.Execute(
+                @"INSERT INTO activity_logs (user_id, action, entity_type, entity_id, description)
+                  VALUES (@userId, 'cancelled', 'purchase_order', @poId, @description)",
+                new { userId = user.Id, poId, description = $"{po.PoNo}: {reason}" }, tx);
+
+            tx.Commit();
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
+    }
+
     // ------------------------------------------------------------ create
 
     /// <summary>Creates the order. Returns the new purchase order id.</summary>

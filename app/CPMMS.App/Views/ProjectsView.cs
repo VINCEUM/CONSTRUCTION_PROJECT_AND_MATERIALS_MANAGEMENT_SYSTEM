@@ -97,6 +97,15 @@ public sealed class ProjectsView : UserControl
 
         var statuses = new object[] { "planning", "ongoing", "on_hold", "completed", "cancelled" };
 
+        // the Administrator assigns (and can later change) the Project Engineer of a project
+        const string unassigned = "(not assigned yet)";
+        var engineers = _maintenance.GetUsers(includeInactive: false)
+            .Where(u => u.IsEngineer)
+            .ToDictionary(u => $"{u.FullName} · {u.Email}", u => u.Id);
+        var engineerOptions = new List<object> { unassigned };
+        engineerOptions.AddRange(engineers.Keys);
+        var currentEngineer = engineers.FirstOrDefault(kv => kv.Value == project.ProjectEngineerId).Key ?? unassigned;
+
         using var editor = new RecordEditor(isNew ? "New project" : "Edit project",
             new List<FieldSpec>
             {
@@ -110,6 +119,8 @@ public sealed class ProjectsView : UserControl
                 new() { Key="start",    Label="Start date", Kind=FieldKind.Date, Value=project.StartDate },
                 new() { Key="target",   Label="Target end date", Kind=FieldKind.Date, Value=project.TargetEndDate },
                 new() { Key="status",   Label="Status", Kind=FieldKind.Combo, Options=statuses, Value=project.Status },
+                new() { Key="engineer", Label="Project engineer", Kind=FieldKind.Combo, Options=engineerOptions, Value=currentEngineer,
+                        Hint="The engineer who will see and monitor this project." },
                 new() { Key="desc",     Label="Description", Kind=FieldKind.Multiline, Value=project.Description }
             });
 
@@ -131,6 +142,7 @@ public sealed class ProjectsView : UserControl
         project.StartDate = editor.Date_("start");
         project.TargetEndDate = editor.Date_("target");
         project.Status = editor.Text_("status");
+        project.ProjectEngineerId = engineers.TryGetValue(editor.Text_("engineer"), out var engineerId) ? engineerId : null;
         project.Description = editor.Text_("desc");
 
         try

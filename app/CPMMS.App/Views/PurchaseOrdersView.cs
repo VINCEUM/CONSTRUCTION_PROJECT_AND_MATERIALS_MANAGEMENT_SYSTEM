@@ -12,6 +12,7 @@ public sealed class PurchaseOrdersView : UserControl
     private readonly CheckBox _openOnly = new();
     private readonly Button _new;
     private readonly Button _receive;
+    private readonly Button _cancelOrder;
 
     public PurchaseOrdersView()
     {
@@ -43,6 +44,14 @@ public sealed class PurchaseOrdersView : UserControl
         _receive.Location = new Point(afterNew, 7);
         _receive.Click += (_, _) => Receive();
 
+        _cancelOrder = UiKit.Secondary("Cancel order…");
+        _cancelOrder.ForeColor = Theme.Danger;
+        _cancelOrder.FlatAppearance.BorderColor = Theme.Danger;
+        _cancelOrder.Location = new Point(_receive.Left + _receive.GetPreferredSize(Size.Empty).Width + 8, 7);
+        _cancelOrder.Enabled = false;
+        _cancelOrder.Click += (_, _) => CancelOrder();
+
+        bar.Controls.Add(_cancelOrder);
         bar.Controls.Add(_receive);
         bar.Controls.Add(_new);
         bar.Controls.Add(_openOnly);
@@ -88,10 +97,12 @@ public sealed class PurchaseOrdersView : UserControl
         {
             _items.DataSource = null;
             _receive.Enabled = false;
+            _cancelOrder.Enabled = false;
             return;
         }
 
         _receive.Enabled = po.Status is "draft" or "sent" or "partially_received";
+        _cancelOrder.Enabled = po.Status is "draft" or "sent";
 
         var rows = _catalog.GetPurchaseOrderItems(po.Id);
         UiKit.Bind(_items, rows,
@@ -130,6 +141,31 @@ public sealed class PurchaseOrdersView : UserControl
     {
         using var form = new NewPurchaseOrderForm();
         if (form.ShowDialog(FindForm()) == DialogResult.OK) Reload();
+    }
+
+    private void CancelOrder()
+    {
+        if (_orders.CurrentRow?.DataBoundItem is not PurchaseOrderRow po) return;
+
+        using var editor = new RecordEditor($"Cancel {po.PoNo}",
+            new List<FieldSpec>
+            {
+                new() { Key="reason", Label="Reason for cancelling", Kind=FieldKind.Multiline,
+                        Hint="Required. Only an order that has received nothing yet can be cancelled. The record is kept." }
+            },
+            saveText: "Cancel order");
+
+        if (editor.ShowDialog(FindForm()) != DialogResult.OK) return;
+
+        try
+        {
+            new PurchaseOrderService().Cancel(AppSession.Require, po.Id, editor.Text_("reason"));
+            Reload();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Could not cancel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     private void Receive()

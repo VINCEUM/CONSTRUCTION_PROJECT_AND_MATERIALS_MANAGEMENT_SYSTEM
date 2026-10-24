@@ -18,6 +18,7 @@ public sealed class RequestsView : UserControl
     private readonly Button _reject;
     private readonly Button _submit;
     private readonly Button _cancel;
+    private readonly Button _void;
 
     public RequestsView()
     {
@@ -89,6 +90,16 @@ public sealed class RequestsView : UserControl
         _cancel.Enabled = false;
         _cancel.Click += (_, _) => CancelSelected();
 
+        // an approved request that nothing has been issued or ordered against can be voided (with a reason)
+        _void = UiKit.Secondary("Void…");
+        _void.ForeColor = Theme.Danger;
+        _void.FlatAppearance.BorderColor = Theme.Danger;
+        _void.Location = new Point(_cancel.Left + _cancel.GetPreferredSize(Size.Empty).Width + 8, 7);
+        _void.Visible = canDecide;
+        _void.Enabled = false;
+        _void.Click += (_, _) => VoidSelected();
+
+        bar.Controls.Add(_void);
         bar.Controls.Add(_cancel);
         bar.Controls.Add(_submit);
         bar.Controls.Add(_reject);
@@ -150,6 +161,7 @@ public sealed class RequestsView : UserControl
         _reject.Enabled = submitted;
 
         _submit.Enabled = row is { Status: "draft" } && row.RequestedBy == user?.Id;
+        _void.Enabled = row is { Status: "approved" } && user?.IsAdmin == true;
         _cancel.Enabled = row is { Status: "draft" or "submitted" }
                           && (row.RequestedBy == user?.Id || user?.IsAdmin == true);
     }
@@ -203,6 +215,31 @@ public sealed class RequestsView : UserControl
         catch (Exception ex)
         {
             MessageBox.Show(this, ex.Message, "Could not cancel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    private void VoidSelected()
+    {
+        if (_requests.CurrentRow?.DataBoundItem is not MaterialRequest request) return;
+
+        using var editor = new RecordEditor($"Void {request.RequestNo}",
+            new List<FieldSpec>
+            {
+                new() { Key="reason", Label="Reason for voiding", Kind=FieldKind.Multiline,
+                        Hint="Required. Only possible before anything is issued or ordered. The record is kept." }
+            },
+            saveText: "Void request");
+
+        if (editor.ShowDialog(FindForm()) != DialogResult.OK) return;
+
+        try
+        {
+            _requestSvc.Void(request.Id, AppSession.Require, editor.Text_("reason"));
+            AfterDecision(request.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Could not void", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
