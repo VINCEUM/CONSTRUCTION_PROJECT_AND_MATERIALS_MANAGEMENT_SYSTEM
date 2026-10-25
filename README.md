@@ -1,9 +1,11 @@
 # Construction Project and Materials Monitoring System (CPMMS)
 IT13 · C# / .NET 9 WinForms · MySQL 8
 
-Tracks what a construction project **planned** to consume against what it **actually**
-consumed, through the full paper trail: request → purchase order → delivery → issuance →
-return → physical count.
+Monitors construction **projects** and the **materials** they use. A project has a schedule of
+weighted tasks and a Bill of Quantities; its materials move through one auditable paper trail:
+request → purchase order → delivery → issuance → return → physical count. Every stock movement
+is written to a single ledger, so what a project **planned** to use can always be compared with
+what it **actually** used.
 
 ## Where things are
 
@@ -65,15 +67,23 @@ ORDER BY variance_percent DESC;
 PDF and it goes straight into your documentation — no hand-drawing, and it can't drift from
 the real database.
 
-## Demo accounts
+## Roles and demo accounts
 
-All demo passwords are `password`.
+There are exactly two roles. All demo passwords are `password`.
 
 | Role | Email | Can do |
 |---|---|---|
-| Admin | admin@buildcorp.test | Users, suppliers, approvals, purchasing, receiving, issuing, stock adjustments, reports |
-| Project Engineer | karla.dizon@buildcorp.test | Projects, tasks, estimates, requests, progress |
-| Project Engineer | nico.alcantara@buildcorp.test | Same, second project |
+| Administrator | admin@buildcorp.test | Everything: users, projects (and assigning engineers), suppliers, the materials list, approving requests, purchase orders, receiving deliveries, issuing, returns, physical counts, reports, activity log |
+| Project Engineer | karla.dizon@buildcorp.test | **Only the projects assigned to them:** view the project, schedule tasks and update progress, record the Bill of Quantities, create and submit material requests, read reports |
+| Project Engineer | nico.alcantara@buildcorp.test | Same, for a second project |
+
+An engineer cannot approve requests, create purchase orders, manage suppliers, change the
+materials list, issue or receive stock, or edit stock directly. These rules are enforced in the
+service layer (`AccessGuard`, `ApprovalService`, `ProjectMonitoringService`, `ReportService`),
+not just by hiding buttons.
+
+> If your database was created before the two-role change, run
+> `migration_phase1_two_roles.sql` once. A fresh import of `database_seed.sql` already has two roles.
 
 ## What the seed data already shows
 
@@ -91,103 +101,91 @@ C# / .NET 9 WinForms desktop app, MySQL via MySqlConnector + Dapper.
 ```
 app/
 ├── CPMMS.sln
-├── CPMMS.Core/          class library — no UI code
-│   ├── Database/
-│   │   ├── DatabaseHelper.cs   connection string + query helpers
-│   │   └── DemoData.cs         sample data for running without MySQL
+├── CPMMS.Core/          class library: no UI code
+│   ├── Database/        DatabaseHelper (connection + queries), DemoData (offline sample data)
 │   ├── Models/          plain classes matching the tables and views
 │   └── Services/
-│       ├── AuthService.cs       bcrypt login, session, audit log
-│       ├── CatalogService.cs    reads for the list screens
-│       ├── InventoryService.cs  every movement of stock: issue, receive,
-│       │                        return, physical count
-│       └── MaintenanceService.cs suppliers, materials, projects, users
-└── CPMMS.App/           WinForms
-    ├── LoginForm        checks the DB is reachable before you try to sign in
-    ├── MainForm         left nav + swappable views
-    ├── IssueForm        release materials against an approved request
-    ├── ReceiveForm      receive a delivery against a purchase order
-    ├── LedgerForm       stock card for one material
-    └── Views/           Dashboard, Projects, Materials, Requests,
-                         Purchase Orders, Variance
+│       ├── AuthService            bcrypt login, session
+│       ├── AccessGuard            the Administrator-only rule, enforced for writes
+│       ├── ApprovalService        approve / reject (never the requester)
+│       ├── RequestService         draft, submit, cancel, void a material request
+│       ├── PurchaseOrderService   purchase orders from approved requests; cancel
+│       ├── InventoryService       every stock movement: issue, receive, return, count
+│       ├── StockControlService    returns and physical counts (checks + history)
+│       ├── ProjectMonitoringService  tasks, weighted progress, Bill of Quantities
+│       ├── ReportService          per-project reports and the activity log
+│       ├── CatalogService         reads for the list screens and the dashboard
+│       └── MaintenanceService     suppliers, materials, projects, users
+└── CPMMS.App/           WinForms (login, main window, dialogs, and Views/)
 ```
 
 **Open it in Visual Studio:** double-click `app/CPMMS.sln`, set `CPMMS.App` as the startup
 project, press F5. Or from a terminal:
 
 ```bash
-dotnet run --project "D:/RESEARCH PAPER/IT13/app/CPMMS.App"
+dotnet run --project "app/CPMMS.App"
 ```
 
-Set your MySQL root password in `app/CPMMS.App/appsettings.json` — the file ships with a
-blank password, which is almost certainly not what your server uses.
+Set your MySQL password in `app/CPMMS.App/appsettings.json`. The file ships with a blank
+password, which is almost certainly not what your server uses. Delivery photos are copied into an
+`uploads/deliveries` folder next to the executable.
 
 ### Why the layering matters
 
-`CPMMS.Core` has no reference to WinForms. Every stock rule lives in `InventoryService`,
-not behind a button, so the rules hold no matter which screen calls them — and you can say
-that in the defence. `IssueMaterials` in particular does all of this in **one database
-transaction**:
+`CPMMS.Core` has no reference to WinForms. Every stock rule lives in a service, not behind a
+button, so the rules hold no matter which screen calls them. `IssueMaterials` in particular does all
+of this in **one database transaction**:
 
 1. locks the request row, and rejects anything not `approved` / `partially_issued`
 2. locks every material row (`SELECT … FOR UPDATE`) **before** checking any quantity
-3. rejects the whole issuance if any line exceeds stock — nothing partial is written
+3. rejects the whole issuance if any line exceeds stock, so nothing partial is written
 4. writes the issue header and lines, snapshotting `unit_cost`
 5. writes one `inventory_transactions` row per line with the new `balance_after`
 6. updates `materials.current_stock` in the same transaction
 7. advances `qty_issued` on the request lines and moves the request status
 8. posts the cost to `project_expenses` and writes an `activity_logs` entry
 
-Step 2 is what makes two issuances of the last 10 bags at the same time safe — the
-second one waits for the lock, then fails the stock check honestly instead of driving stock
-negative.
+Step 2 is what makes two issuances of the last 10 bags at the same time safe: the second one
+waits for the lock, then fails the stock check honestly instead of driving stock negative.
 
-### Screens so far
+### Screens
 
-| Screen | Shows |
-|---|---|
-| **Dashboard** | KPI cards, low-stock list, and a **ledger health check** — cached stock against the ledger's own sum |
-| **Projects** | Budget vs material spend vs weighted progress, from `v_project_cost_summary` |
-| **Materials** | Search, low-stock filter, colour-coded stock; double-click a row for its stock card |
-| **Stock card** | Every transaction behind one material's balance, with a footer proving the two agree |
-| **Material Requests** | Master-detail; flags lines that cannot be filled from stock right now |
-| **Purchase Orders** | Open orders with outstanding lines; opens the receiving form |
-| **Receive delivery** | Editable lines, DR number, partial and over-delivery handled |
-| **Issue materials** | Editable lines pre-filled with what stock can actually cover, with the stock rules enforced by the service |
-| **Variance Report** | Planned vs actual per material, overruns over 10% in red — the report the system exists for |
-| **Suppliers** | Add, edit, deactivate — merged in from the teammate version |
-| **Users** | Add, edit, reset password, deactivate. Admin only — merged in from the teammate version |
-| **Materials / Projects** | Add and Edit dialogs — merged in from the teammate version |
+| Screen | Who | What it does |
+|---|---|---|
+| **Dashboard** | both | Contract value, pending requests, and the **reorder list** (materials at or below their minimum, with how far short). The Administrator also sees stock value and the **ledger health check** |
+| **Projects** | Admin edits, engineer reads | Budget vs material spend vs weighted progress. The Administrator adds and edits projects and assigns the Project Engineer |
+| **Monitoring** | both | Pick a project: tasks with weight, schedule and progress (overall progress is weighted), and the Bill of Quantities with planned cost against the material budget |
+| **Reports** | both | Per project: progress, material requests, inventory transactions, material usage, cost and quantity variance. Export to CSV |
+| **Materials** | Admin edits, engineer reads | Search, low-stock filter, stock card for any material. Stock can only change through a posted transaction |
+| **Material Requests** | both | Engineer drafts, submits, cancels. Administrator approves, rejects, voids, and issues materials |
+| **Purchase Orders** | Admin | Create from an approved request, receive deliveries (DR number, date, photo, recipient, partial deliveries), cancel an order that has received nothing |
+| **Suppliers** | Admin | Add, edit, deactivate |
+| **Stock Control** | Admin | Returns (reusable go back to stock, damaged stay charged as wastage) and physical counts (differences posted as adjustments with a reason) |
+| **Activity Log** | Admin | Who did what and when: approvals, rejections, cancellations, voids, adjustments, deliveries, issues, and reorder alerts |
+| **Users** | Admin | Add, edit, reset password, deactivate |
 
-### Stock movements — all four are implemented in `InventoryService`
+### Stock movements, all in `InventoryService`
 
 | Operation | Rule it enforces |
 |---|---|
 | `IssueMaterials` | locks each material before checking; rejects the whole issuance if any line exceeds stock; snapshots unit cost; posts the project expense |
 | `ReceiveDelivery` | partial deliveries keep the PO open; updates last purchase price; writes one `RECEIVED` row per line |
-| `ReturnMaterials` | reusable stock returns to the bodega; **damaged does not** — it stays charged to the project as wastage |
-| `PostStockAdjustment` | the counted figure becomes stock, and the difference is written as an `ADJUSTMENT` with a reason — stock is never edited directly |
+| `ReturnMaterials` | reusable stock returns to the shelf; **damaged does not**, it stays charged to the project as wastage |
+| `PostStockAdjustment` | the counted figure becomes stock, and the difference is written as an `ADJUSTMENT` with a reason; stock is never edited directly |
+
+When an issuance or a count takes a material to or below its minimum, a `reorder` entry is written
+to the activity log. **No purchase order is created automatically**: an engineer requests, the
+Administrator approves and orders.
 
 ### Merged from the teammate version
 
 The group had a second implementation (`ConstructionPMS_IT13FinalProject`). Its maintenance
-screens have been rebuilt against this schema; its simpler 6-table database was not carried
-over. See [docs/merge-notes.md](docs/merge-notes.md) for what came from where and why.
+screens were rebuilt against this schema; its simpler 6-table database was not carried over. See
+[docs/merge-notes.md](docs/merge-notes.md).
 
-### Still to build
+## Status
 
-Forms for returns and physical count (the services are written), creating requests and
-purchase orders in-app, printable reports.
-
-## Next step
-
-1. Install MySQL Server and import the two SQL files
-2. Run the app and sign in — the dashboard should report *ledger check passed*
-3. Build the issuance form on top of `InventoryService.IssueMaterials`
-4. Receiving against a purchase order, then returns and physical count
-5. Supplier, user and project maintenance screens
-6. Printable reports
-
-Status: database design complete and parse-checked. Application builds clean (0 warnings,
-0 errors) with login, dashboard, projects, materials, stock card, requests and variance
-screens. Neither has been run against a live MySQL server yet — that is step 1.
+Every functional requirement in the project requirements document is implemented. Not done:
+automated tests, and PDF/print output (reports export to CSV instead). Demo mode (running without
+MySQL) only covers browsing the original screens; the monitoring, reports, stock-control, and
+purchasing features need the database.
