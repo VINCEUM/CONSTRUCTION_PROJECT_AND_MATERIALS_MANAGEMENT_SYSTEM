@@ -37,6 +37,7 @@ public sealed class InventoryService
     public int IssueMaterials(int requestId, DateTime issueDate, int issuedByUserId,
                               string receivedBy, IList<IssueLine> lines)
     {
+        AccessGuard.RequireAdmin("issue materials");
         if (lines is null || lines.Count == 0)
             throw new ArgumentException("Nothing to issue.", nameof(lines));
         if (lines.Any(l => l.Qty <= 0))
@@ -198,6 +199,7 @@ public sealed class InventoryService
     public int ReceiveDelivery(int poId, string drNo, DateTime deliveryDate, int receivedByUserId,
                                string? photoPath, IList<ReceiveLine> lines)
     {
+        AccessGuard.RequireAdmin("record deliveries");
         if (lines is null || lines.Count == 0)
             throw new ArgumentException("Nothing to receive.", nameof(lines));
         if (lines.Any(l => l.Qty <= 0))
@@ -294,6 +296,7 @@ public sealed class InventoryService
     public int ReturnMaterials(int projectId, int? issueId, DateTime returnDate, string returnedBy,
                                int acceptedByUserId, string? conditionNote, IList<ReturnLine> lines)
     {
+        AccessGuard.RequireAdmin("accept returned materials");
         if (lines is null || lines.Count == 0)
             throw new ArgumentException("Nothing to return.", nameof(lines));
         if (lines.Any(l => l.Qty <= 0))
@@ -369,6 +372,7 @@ public sealed class InventoryService
     public int PostStockAdjustment(DateTime countDate, int countedByUserId, string reason,
                                    IList<CountLine> lines)
     {
+        AccessGuard.RequireAdmin("post stock adjustments");
         if (lines is null || lines.Count == 0)
             throw new ArgumentException("Nothing counted.", nameof(lines));
         if (string.IsNullOrWhiteSpace(reason))

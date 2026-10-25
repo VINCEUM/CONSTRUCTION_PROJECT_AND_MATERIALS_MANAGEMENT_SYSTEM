@@ -31,6 +31,7 @@ public sealed class MaintenanceService
 
     public int SaveSupplier(Supplier supplier)
     {
+        AccessGuard.RequireAdmin("manage suppliers");
         if (string.IsNullOrWhiteSpace(supplier.CompanyName))
             throw new ArgumentException("A supplier needs a company name.");
 
@@ -81,6 +82,7 @@ public sealed class MaintenanceService
 
     public int SaveMaterial(Material material)
     {
+        AccessGuard.RequireAdmin("maintain the materials list");
         if (string.IsNullOrWhiteSpace(material.Name)) throw new ArgumentException("A material needs a name.");
         if (string.IsNullOrWhiteSpace(material.Code)) throw new ArgumentException("A material needs a code.");
         if (string.IsNullOrWhiteSpace(material.Unit)) throw new ArgumentException("A material needs a unit.");
@@ -124,6 +126,7 @@ public sealed class MaintenanceService
 
     public int SaveProject(Project project)
     {
+        AccessGuard.RequireAdmin("create or edit projects");
         if (string.IsNullOrWhiteSpace(project.Name)) throw new ArgumentException("A project needs a name.");
         if (string.IsNullOrWhiteSpace(project.Code)) throw new ArgumentException("A project needs a code.");
         if (project.TargetEndDate < project.StartDate)
@@ -181,6 +184,7 @@ public sealed class MaintenanceService
     /// <summary>Pass a plain password to set or reset it; leave it empty to keep the existing one.</summary>
     public int SaveUser(User user, string? newPassword)
     {
+        AccessGuard.RequireAdmin("manage user accounts");
         if (string.IsNullOrWhiteSpace(user.FullName)) throw new ArgumentException("A user needs a full name.");
         if (string.IsNullOrWhiteSpace(user.Email)) throw new ArgumentException("A user needs an email address.");
         if (user.Id == 0 && string.IsNullOrWhiteSpace(newPassword))
