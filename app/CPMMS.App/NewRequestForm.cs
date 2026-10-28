@@ -43,7 +43,7 @@ public sealed class NewRequestForm : Form
 
         Text = "New material request";
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(820, 560);
+        ClientSize = UiKit.FitSize(1000, 680);
         BackColor = Theme.Surface;
         Font = Theme.Body;
 
@@ -51,70 +51,48 @@ public sealed class NewRequestForm : Form
         _catalog = _requests.GetRequestableMaterials();
 
         // ---- header -----------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 128, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
-        var title = new Label { Text = "New material request", Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false };
-
-        // positions are computed from each label's own measured width (not a
-        // guessed pixel number), so a label can never overlap the control after it
-        var fields = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblProject = new Label { Text = "Project", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _project.DropDownStyle = ComboBoxStyle.DropDownList;
-        _project.Location = new Point(lblProject.Right + 12, 4);
-        _project.Width = 320;
+        _project.Width = 400;
         _project.DisplayMember = "Name";
         _project.ValueMember = "Id";
         _project.DataSource = projects;
 
-        var lblNeeded = new Label { Text = "Needed by", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_project.Right + 24, 8), AutoSize = true };
         _needed.Format = DateTimePickerFormat.Short;
-        _needed.Location = new Point(lblNeeded.Right + 12, 4);
-        _needed.Width = 160;
+        _needed.Width = 180;
         _needed.Value = DateTime.Today.AddDays(3);
 
-        fields.Controls.AddRange(new Control[] { lblProject, _project, lblNeeded, _needed });
-
-        var remarksRow = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblRemarks = new Label { Text = "Remarks", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _remarks.Location = new Point(lblRemarks.Right + 12, 4);
-        _remarks.Width = 538;
-        _remarks.BorderStyle = BorderStyle.FixedSingle;
+        _remarks.Width = 660;
         _remarks.PlaceholderText = "optional — what this request is for";
-        remarksRow.Controls.AddRange(new Control[] { lblRemarks, _remarks });
 
-        header.Controls.Add(remarksRow);
-        header.Controls.Add(fields);
-        header.Controls.Add(title);
+        var header = UiKit.HeaderPanel(
+            UiKit.FormTitle("New material request"),
+            UiKit.FieldRow(("Project", _project), ("Needed by", _needed)),
+            UiKit.FieldRow(("Remarks", _remarks)));
 
         // ---- add-line bar -------------------------------------------------
-        var addBar = new Panel { Dock = DockStyle.Top, Height = 44, BackColor = Theme.Surface, Padding = new Padding(0, 8, 0, 0) };
         _material.DropDownStyle = ComboBoxStyle.DropDownList;
-        _material.Location = new Point(0, 8);
-        _material.Width = 420;
+        _material.Width = 480;
         _material.DisplayMember = "Name";
         _material.ValueMember = "Id";
         _material.DataSource = _catalog.Select(m => new { m.Id, Name = $"{m.Code} — {m.Name} ({m.Unit})", m.CurrentStock }).ToList();
 
-        _qty.Location = new Point(430, 8);
-        _qty.Width = 90;
+        _qty.Width = 110;
         _qty.DecimalPlaces = 2;
         _qty.Maximum = 999999;
         _qty.Minimum = 0.01m;
         _qty.Value = 1;
 
         var add = UiKit.Secondary("Add line");
-        add.Location = new Point(528, 6);
         add.Click += (_, _) => AddLine();
 
         var remove = UiKit.Secondary("Remove selected");
         remove.ForeColor = Theme.Danger;
         remove.FlatAppearance.BorderColor = Theme.Danger;
-        remove.Location = new Point(528 + add.GetPreferredSize(Size.Empty).Width + 8, 6);
         remove.Click += (_, _) => RemoveLine();
 
-        addBar.Controls.Add(remove);
-        addBar.Controls.Add(add);
-        addBar.Controls.Add(_qty);
-        addBar.Controls.Add(_material);
+        var addBar = UiKit.FieldRow(("Material", _material), ("Qty", _qty), ("", add), ("", remove));
+        addBar.BackColor = Theme.Surface;
+        addBar.Padding = new Padding(28, 8, 0, 6);
 
         // ---- grid -----------------------------------------------------------
         UiKit.Bind(_grid, _lines,
@@ -129,7 +107,7 @@ public sealed class NewRequestForm : Form
         host.Controls.Add(_grid);
 
         // ---- footer ---------------------------------------------------------
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 76, BackColor = Color.White, Padding = new Padding(18, 10, 18, 10) };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 116, BackColor = Color.White, Padding = new Padding(28, 12, 28, 14) };
 
         _error.ForeColor = Theme.Danger;
         _error.Dock = DockStyle.Top;

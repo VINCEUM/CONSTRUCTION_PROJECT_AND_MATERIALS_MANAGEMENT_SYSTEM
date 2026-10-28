@@ -21,6 +21,8 @@ public static class Theme
     public static readonly Font H1    = new("Segoe UI Semibold", 16F);
     public static readonly Font H2    = new("Segoe UI Semibold", 11F);
     public static readonly Font Body  = new("Segoe UI", 9.75F);
+    /// <summary>The font inside text boxes, drop-downs and date pickers: a size larger so they read easily.</summary>
+    public static readonly Font Input = new("Segoe UI", 11F);
     public static readonly Font Big   = new("Segoe UI Semibold", 20F);
     public static readonly Font Small = new("Segoe UI", 8.25F);
 

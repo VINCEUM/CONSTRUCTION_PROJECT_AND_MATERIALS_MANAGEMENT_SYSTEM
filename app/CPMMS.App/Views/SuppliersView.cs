@@ -36,6 +36,7 @@ public sealed class SuppliersView : UserControl
         _showInactive.AutoSize = true;
         _showInactive.CheckedChanged += (_, _) => Reload();
 
+        UiKit.LayoutRow(0, 8, 12, add, _edit, _toggle, _showInactive);
         bar.Controls.AddRange(new Control[] { _showInactive, _toggle, _edit, add });
 
         var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };

@@ -39,7 +39,7 @@ public sealed class CountForm : Form
 
         Text = "Physical count";
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(1020, 620);
+        ClientSize = UiKit.FitSize(1200, 720);
         BackColor = Theme.Surface;
         Font = Theme.Body;
 
@@ -52,30 +52,16 @@ public sealed class CountForm : Form
             }).ToList());
 
         // ---- header ---------------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 134, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
-        var title = new Label { Text = "Physical count", Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false };
-        var sub = new Label
-        {
-            Text = "Enter the counted quantity for each material you counted and leave the others blank.",
-            ForeColor = Theme.Muted, Dock = DockStyle.Top, Height = 22, AutoSize = false
-        };
-
-        var row = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblDate = new Label { Text = "Count date", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _date.Format = DateTimePickerFormat.Short;
-        _date.Location = new Point(lblDate.Right + 12, 4);
-        _date.Width = 160;
+        _date.Width = 180;
         _date.Value = DateTime.Today;
-        var lblReason = new Label { Text = "Reason", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_date.Right + 24, 8), AutoSize = true };
-        _reason.Location = new Point(lblReason.Right + 12, 4);
-        _reason.Width = 460;
-        _reason.BorderStyle = BorderStyle.FixedSingle;
+        _reason.Width = 600;
         _reason.PlaceholderText = "e.g. Month-end physical count";
-        row.Controls.AddRange(new Control[] { lblDate, _date, lblReason, _reason });
 
-        header.Controls.Add(row);
-        header.Controls.Add(sub);
-        header.Controls.Add(title);
+        var header = UiKit.HeaderPanel(
+            UiKit.FormTitle("Physical count"),
+            UiKit.FormSubtitle("Enter the counted quantity for each material you counted and leave the others blank."),
+            UiKit.FieldRow(("Count date", _date), ("Reason", _reason)));
 
         // ---- grid -------------------------------------------------------------
         UiKit.Bind(_grid, _rows,
@@ -113,7 +99,7 @@ public sealed class CountForm : Form
         host.Controls.Add(_grid);
 
         // ---- footer -----------------------------------------------------------
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 92, BackColor = Color.White, Padding = new Padding(18, 10, 18, 10) };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 116, BackColor = Color.White, Padding = new Padding(28, 12, 28, 14) };
         _error.ForeColor = Theme.Danger;
         _error.Dock = DockStyle.Top;
         _error.Height = 22;

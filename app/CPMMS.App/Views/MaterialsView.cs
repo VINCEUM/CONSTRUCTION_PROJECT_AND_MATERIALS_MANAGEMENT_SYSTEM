@@ -49,15 +49,16 @@ public sealed class MaterialsView : UserControl
 
         _count.ForeColor = Theme.Muted;
         _count.Font = Theme.Small;
-        _count.AutoSize = false;
-        _count.Location = new Point(688, 14);
-        _count.Size = new Size(300, 20);
+        _count.AutoSize = true;
 
         // the materials master list is maintained by the Administrator; an
         // engineer can look materials and stock up but not change them
         var isAdmin = AppSession.CurrentUser?.IsAdmin == true;
         add.Visible = isAdmin;
         _edit.Visible = isAdmin;
+
+        var after = UiKit.LayoutRow(_search.Right + 20, 8, 12, _lowOnly, stockCard, add, _edit);
+        _count.Location = new Point(after + 8, 14);
 
         bar.Controls.Add(_edit);
         bar.Controls.Add(add);

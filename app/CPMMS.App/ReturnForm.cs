@@ -46,53 +46,32 @@ public sealed class ReturnForm : Form
 
         Text = "Return materials";
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(1020, 600);
+        ClientSize = UiKit.FitSize(1200, 720);
         BackColor = Theme.Surface;
         Font = Theme.Body;
 
         _projects = new CatalogService().GetProjects();
 
         // ---- header ---------------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 168, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
-        var title = new Label { Text = "Return materials", Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false };
-
-        var row1 = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblProject = new Label { Text = "Project", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _project.DropDownStyle = ComboBoxStyle.DropDownList;
-        _project.Location = new Point(lblProject.Right + 12, 4);
-        _project.Width = 380;
+        _project.Width = 440;
         foreach (var p in _projects) _project.Items.Add($"{p.Code} — {p.Name}");
-        var lblIssue = new Label { Text = "From issuance", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_project.Right + 24, 8), AutoSize = true };
         _issue.DropDownStyle = ComboBoxStyle.DropDownList;
-        _issue.Location = new Point(lblIssue.Right + 12, 4);
-        _issue.Width = 240;
-        row1.Controls.AddRange(new Control[] { lblProject, _project, lblIssue, _issue });
+        _issue.Width = 300;
 
-        var row2 = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblDate = new Label { Text = "Return date", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _date.Format = DateTimePickerFormat.Short;
-        _date.Location = new Point(lblDate.Right + 12, 4);
-        _date.Width = 160;
+        _date.Width = 180;
         _date.Value = DateTime.Today;
-        var lblBy = new Label { Text = "Returned by", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_date.Right + 24, 8), AutoSize = true };
-        _returnedBy.Location = new Point(lblBy.Right + 12, 4);
-        _returnedBy.Width = 280;
-        _returnedBy.BorderStyle = BorderStyle.FixedSingle;
+        _returnedBy.Width = 360;
         _returnedBy.PlaceholderText = "Name of the person from site";
-        row2.Controls.AddRange(new Control[] { lblDate, _date, lblBy, _returnedBy });
-
-        var row3 = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblNote = new Label { Text = "Condition note", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _note.Location = new Point(lblNote.Right + 12, 4);
-        _note.Width = 520;
-        _note.BorderStyle = BorderStyle.FixedSingle;
+        _note.Width = 720;
         _note.PlaceholderText = "optional";
-        row3.Controls.AddRange(new Control[] { lblNote, _note });
 
-        header.Controls.Add(row3);
-        header.Controls.Add(row2);
-        header.Controls.Add(row1);
-        header.Controls.Add(title);
+        var header = UiKit.HeaderPanel(
+            UiKit.FormTitle("Return materials"),
+            UiKit.FieldRow(("Project", _project), ("From issuance", _issue)),
+            UiKit.FieldRow(("Return date", _date), ("Returned by", _returnedBy)),
+            UiKit.FieldRow(("Condition note", _note)));
 
         // ---- grid -------------------------------------------------------------
         UiKit.Bind(_grid, _rows,
@@ -107,7 +86,7 @@ public sealed class ReturnForm : Form
 
         var minWidths = new Dictionary<string, int>
         {
-            ["MaterialCode"] = 80, ["MaterialName"] = 190, ["Unit"] = 65, ["QtyIssued"] = 95,
+            ["MaterialCode"] = 105, ["MaterialName"] = 210, ["Unit"] = 70, ["QtyIssued"] = 110,
             ["QtyAlreadyReturned"] = 150, ["CanReturn"] = 115, ["QtyReusable"] = 130, ["QtyDamaged"] = 130
         };
         foreach (var (name, width) in minWidths) _grid.Columns[name]!.MinimumWidth = width;
@@ -133,7 +112,7 @@ public sealed class ReturnForm : Form
         host.Controls.Add(_grid);
 
         // ---- footer -----------------------------------------------------------
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 92, BackColor = Color.White, Padding = new Padding(18, 10, 18, 10) };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 116, BackColor = Color.White, Padding = new Padding(28, 12, 28, 14) };
         _error.ForeColor = Theme.Danger;
         _error.Dock = DockStyle.Top;
         _error.Height = 22;

@@ -31,6 +31,7 @@ public sealed class ProjectsView : UserControl
 
         add.Visible = _isAdmin;
         _edit.Visible = _isAdmin;
+        UiKit.LayoutRow(0, 8, 12, add, _edit);
         bar.Controls.Add(_edit);
         bar.Controls.Add(add);
 

@@ -47,7 +47,7 @@ public sealed class NewPurchaseOrderForm : Form
 
         Text = "New purchase order";
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(980, 580);
+        ClientSize = UiKit.FitSize(1180, 720);
         BackColor = Theme.Surface;
         Font = Theme.Body;
 
@@ -55,58 +55,34 @@ public sealed class NewPurchaseOrderForm : Form
         var suppliers = _orders.GetSuppliers();
 
         // ---- header -----------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 162, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
-        var title = new Label { Text = "New purchase order", Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false };
-
-        // positions are computed from each label's own measured width (not a
-        // guessed pixel number), so a label can never overlap the control after it
-        var row1 = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblRequest = new Label { Text = "Request", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _request.DropDownStyle = ComboBoxStyle.DropDownList;
-        _request.Location = new Point(lblRequest.Right + 12, 4);
-        _request.Width = 420;
+        _request.Width = 480;
         _request.DisplayMember = "Name";
         _request.ValueMember = "Id";
         _request.DataSource = _orderable.Select(r => new { r.Id, Name = $"{r.RequestNo} — {r.ProjectName}" }).ToList();
         _request.SelectedIndexChanged += (_, _) => LoadRequestItems();
 
-        var lblSupplier = new Label { Text = "Supplier", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_request.Right + 24, 8), AutoSize = true };
         _supplier.DropDownStyle = ComboBoxStyle.DropDownList;
-        _supplier.Location = new Point(lblSupplier.Right + 12, 4);
-        _supplier.Width = 260;
+        _supplier.Width = 320;
         _supplier.DisplayMember = "CompanyName";
         _supplier.ValueMember = "Id";
         _supplier.DataSource = suppliers;
 
-        row1.Controls.AddRange(new Control[] { lblRequest, _request, lblSupplier, _supplier });
-
-        var row2 = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblOrder = new Label { Text = "Order date", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _orderDate.Format = DateTimePickerFormat.Short;
-        _orderDate.Location = new Point(lblOrder.Right + 12, 4);
-        _orderDate.Width = 160;
+        _orderDate.Width = 180;
         _orderDate.Value = DateTime.Today;
-
-        var lblExpected = new Label { Text = "Expected delivery", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_orderDate.Right + 24, 8), AutoSize = true };
         _expectedDate.Format = DateTimePickerFormat.Short;
-        _expectedDate.Location = new Point(lblExpected.Right + 12, 4);
-        _expectedDate.Width = 160;
+        _expectedDate.Width = 180;
         _expectedDate.Value = DateTime.Today.AddDays(7);
 
-        row2.Controls.AddRange(new Control[] { lblOrder, _orderDate, lblExpected, _expectedDate });
-
-        var remarksRow = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblRemarks = new Label { Text = "Remarks", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _remarks.Location = new Point(lblRemarks.Right + 12, 4);
-        _remarks.Width = 538;
-        _remarks.BorderStyle = BorderStyle.FixedSingle;
+        _remarks.Width = 720;
         _remarks.PlaceholderText = "optional";
-        remarksRow.Controls.AddRange(new Control[] { lblRemarks, _remarks });
 
-        header.Controls.Add(remarksRow);
-        header.Controls.Add(row2);
-        header.Controls.Add(row1);
-        header.Controls.Add(title);
+        var header = UiKit.HeaderPanel(
+            UiKit.FormTitle("New purchase order"),
+            UiKit.FieldRow(("Request", _request), ("Supplier", _supplier)),
+            UiKit.FieldRow(("Order date", _orderDate), ("Expected delivery", _expectedDate)),
+            UiKit.FieldRow(("Remarks", _remarks)));
 
         // ---- grid -------------------------------------------------------
         UiKit.Bind(_grid, _rows,
@@ -122,8 +98,8 @@ public sealed class NewPurchaseOrderForm : Form
         // shares out whatever space is left over
         var minWidths = new Dictionary<string, int>
         {
-            ["MaterialCode"] = 80, ["MaterialName"] = 190, ["Unit"] = 65,
-            ["QtyRequested"] = 100, ["Qty"] = 110, ["UnitPrice"] = 105, ["LineTotal"] = 115
+            ["MaterialCode"] = 105, ["MaterialName"] = 210, ["Unit"] = 70,
+            ["QtyRequested"] = 125, ["Qty"] = 150, ["UnitPrice"] = 130, ["LineTotal"] = 130
         };
         foreach (var (name, width) in minWidths) _grid.Columns[name]!.MinimumWidth = width;
 
@@ -147,7 +123,7 @@ public sealed class NewPurchaseOrderForm : Form
         host.Controls.Add(_grid);
 
         // ---- footer -------------------------------------------------------
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 92, BackColor = Color.White, Padding = new Padding(18, 10, 18, 10) };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 116, BackColor = Color.White, Padding = new Padding(28, 12, 28, 14) };
 
         _error.ForeColor = Theme.Danger;
         _error.Dock = DockStyle.Top;

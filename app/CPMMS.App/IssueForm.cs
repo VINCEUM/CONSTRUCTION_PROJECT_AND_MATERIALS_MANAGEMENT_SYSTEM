@@ -44,7 +44,7 @@ public sealed class IssueForm : Form
 
         Text = $"Issue materials — {request.RequestNo}";
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(1080, 560);
+        ClientSize = UiKit.FitSize(1200, 700);
         BackColor = Theme.Surface;
         Font = Theme.Body;
 
@@ -66,38 +66,16 @@ public sealed class IssueForm : Form
         }).ToList());
 
         // ---- header ---------------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 96, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
-        var title = new Label
-        {
-            Text = $"{request.RequestNo}  ·  {request.ProjectName}",
-            Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false
-        };
-        var sub = new Label
-        {
-            Text = $"Requested by {request.RequesterName} on {request.RequestDate:d}  ·  status {request.Status}",
-            ForeColor = Theme.Muted, Dock = DockStyle.Top, Height = 20, AutoSize = false
-        };
-        var fields = new Panel { Dock = DockStyle.Top, Height = 34 };
-
-        // positions are computed from each label's own measured width (not a
-        // guessed pixel number), so a label can never overlap the control after it
-        var lblDate = new Label { Text = "Issue date", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
         _date.Format = DateTimePickerFormat.Short;
-        _date.Location = new Point(lblDate.Right + 12, 4);
-        _date.Width = 160;
+        _date.Width = 180;
         _date.Value = DateTime.Today;
-
-        var lblRecv = new Label { Text = "Received by", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_date.Right + 24, 8), AutoSize = true };
-        _receivedBy.Location = new Point(lblRecv.Right + 12, 4);
-        _receivedBy.Width = 300;
-        _receivedBy.BorderStyle = BorderStyle.FixedSingle;
+        _receivedBy.Width = 400;
         _receivedBy.PlaceholderText = "Name of the person on site";
 
-        fields.Controls.AddRange(new Control[] { lblDate, _date, lblRecv, _receivedBy });
-
-        header.Controls.Add(fields);
-        header.Controls.Add(sub);
-        header.Controls.Add(title);
+        var header = UiKit.HeaderPanel(
+            UiKit.FormTitle($"{request.RequestNo}  ·  {request.ProjectName}"),
+            UiKit.FormSubtitle($"Requested by {request.RequesterName} on {request.RequestDate:d}  ·  status {request.Status}"),
+            UiKit.FieldRow(("Issue date", _date), ("Received by", _receivedBy)));
 
         // ---- grid -----------------------------------------------------------
         UiKit.Bind(_grid, _rows,
@@ -116,7 +94,7 @@ public sealed class IssueForm : Form
         // shares out whatever space is left over
         var minWidths = new Dictionary<string, int>
         {
-            ["MaterialCode"] = 80, ["MaterialName"] = 180, ["Unit"] = 65,
+            ["MaterialCode"] = 105, ["MaterialName"] = 200, ["Unit"] = 65,
             ["QtyRequested"] = 100, ["QtyAlreadyIssued"] = 80, ["QtyOutstanding"] = 125,
             ["OnHand"] = 95, ["UnitCost"] = 105, ["QtyToIssue"] = 105, ["LineCost"] = 105
         };
@@ -140,7 +118,7 @@ public sealed class IssueForm : Form
         host.Controls.Add(_grid);
 
         // ---- footer ---------------------------------------------------------
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 92, BackColor = Color.White, Padding = new Padding(18, 10, 18, 10) };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 116, BackColor = Color.White, Padding = new Padding(28, 12, 28, 14) };
 
         _error.ForeColor = Theme.Danger;
         _error.Dock = DockStyle.Top;

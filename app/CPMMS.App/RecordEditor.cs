@@ -35,6 +35,9 @@ public sealed class RecordEditor : Form
         BackColor = Color.White;
         Font = Theme.Body;
 
+        const int side = 28;          // space between the dialog edge and the fields
+        const int fieldWidth = 400;
+
         var head = new Label
         {
             Text = title,
@@ -42,7 +45,7 @@ public sealed class RecordEditor : Form
             ForeColor = Theme.Ink,
             Dock = DockStyle.Top,
             Height = 42,
-            Padding = new Padding(20, 10, 20, 0),
+            Padding = new Padding(side, 10, side, 0),
             AutoSize = false
         };
 
@@ -56,8 +59,8 @@ public sealed class RecordEditor : Form
                 Text = field.Label,
                 Font = new Font("Segoe UI Semibold", 9F),
                 ForeColor = Theme.InkSoft,
-                Location = new Point(0, y),
-                Size = new Size(380, 18),
+                Location = new Point(side, y),
+                Size = new Size(fieldWidth, 18),
                 AutoSize = false
             };
             body.Controls.Add(label);
@@ -80,8 +83,8 @@ public sealed class RecordEditor : Form
                 _ => new TextBox { Text = FormatValue(field) }
             };
 
-            input.Location = new Point(0, y);
-            input.Width = 380;
+            input.Location = new Point(side, y);
+            input.Width = fieldWidth;
             if (input is TextBox tb) tb.BorderStyle = BorderStyle.FixedSingle;
             if (field.ReadOnly)
             {
@@ -100,17 +103,17 @@ public sealed class RecordEditor : Form
                     Text = field.Hint,
                     Font = Theme.Small,
                     ForeColor = Theme.Muted,
-                    Location = new Point(0, y),
-                    Size = new Size(380, 30),
+                    Location = new Point(side, y),
+                    Size = new Size(fieldWidth, 30),
                     AutoSize = false
                 };
                 body.Controls.Add(hint);
                 y += 32;
             }
-            else y += 8;
+            else y += 12;
         }
 
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 76, Padding = new Padding(20, 6, 20, 12) };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 76, Padding = new Padding(side, 6, side, 12) };
 
         _error.ForeColor = Theme.Danger;
         _error.Dock = DockStyle.Top;
@@ -142,7 +145,7 @@ public sealed class RecordEditor : Form
         Controls.Add(footer);
         Controls.Add(head);
 
-        ClientSize = new Size(424, Math.Min(660, 42 + y + 90));
+        ClientSize = new Size(side * 2 + fieldWidth + 18, Math.Min(680, 42 + y + 90));   // +18 leaves room for the scroll bar
         AcceptButton = save;
         CancelButton = cancel;
     }

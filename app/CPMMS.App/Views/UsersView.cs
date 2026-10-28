@@ -32,6 +32,7 @@ public sealed class UsersView : UserControl
         _toggle.Location = new Point(320, 8);
         _toggle.Click += (_, _) => ToggleStatus();
 
+        UiKit.LayoutRow(0, 8, 12, add, _edit, _password, _toggle);
         bar.Controls.AddRange(new Control[] { _toggle, _password, _edit, add });
 
         var host = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(1) };

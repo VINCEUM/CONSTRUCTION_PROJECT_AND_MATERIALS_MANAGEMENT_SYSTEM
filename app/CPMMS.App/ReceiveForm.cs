@@ -42,7 +42,7 @@ public sealed class ReceiveForm : Form
 
         Text = $"Receive delivery — {po.PoNo}";
         StartPosition = FormStartPosition.CenterParent;
-        ClientSize = new Size(1020, 540);
+        ClientSize = UiKit.FitSize(1200, 720);
         BackColor = Theme.Surface;
         Font = Theme.Body;
 
@@ -62,57 +62,25 @@ public sealed class ReceiveForm : Form
         }).ToList());
 
         // ---- header ---------------------------------------------------------
-        var header = new Panel { Dock = DockStyle.Top, Height = 132, BackColor = Color.White, Padding = new Padding(18, 12, 18, 8) };
-        var title = new Label
-        {
-            Text = $"{po.PoNo}  ·  {po.SupplierName}",
-            Font = Theme.H1, ForeColor = Theme.Ink, Dock = DockStyle.Top, Height = 30, AutoSize = false
-        };
-        var sub = new Label
-        {
-            Text = $"Ordered {po.OrderDate:d}  ·  status {po.Status}  ·  {po.OutstandingLines} line(s) still outstanding",
-            ForeColor = Theme.Muted, Dock = DockStyle.Top, Height = 20, AutoSize = false
-        };
-
-        var fields = new Panel { Dock = DockStyle.Top, Height = 34 };
-        // positions are computed from each label's own measured width (not a
-        // guessed pixel number), so a label can never overlap the control after it
-        var lblDr = new Label { Text = "DR number", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _drNo.Location = new Point(lblDr.Right + 12, 4);
-        _drNo.Width = 220;
-        _drNo.BorderStyle = BorderStyle.FixedSingle;
+        _drNo.Width = 280;
         _drNo.PlaceholderText = "Supplier's receipt no.";
-
-        var lblDate = new Label { Text = "Delivery date", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(_drNo.Right + 24, 8), AutoSize = true };
         _date.Format = DateTimePickerFormat.Short;
-        _date.Location = new Point(lblDate.Right + 12, 4);
-        _date.Width = 160;
+        _date.Width = 180;
         _date.Value = DateTime.Today;
 
-        fields.Controls.AddRange(new Control[] { lblDr, _drNo, lblDate, _date });
-
         // proof of delivery (a photo of the signed receipt or the load) and who received it
-        var proof = new Panel { Dock = DockStyle.Top, Height = 34 };
-        var lblPhoto = new Label { Text = "Delivery photo", Font = Theme.Body, ForeColor = Theme.InkSoft, Location = new Point(0, 8), AutoSize = true };
-        _photo.Location = new Point(lblPhoto.Right + 12, 4);
-        _photo.Width = 320;
-        _photo.BorderStyle = BorderStyle.FixedSingle;
+        _photo.Width = 420;
         _photo.ReadOnly = true;
         _photo.PlaceholderText = "optional — attach a photo (JPG or PNG)";
         var browse = UiKit.Secondary("Browse…");
-        browse.Location = new Point(_photo.Right + 8, 2);
         browse.Click += (_, _) => BrowsePhoto();
-        var lblRecipient = new Label
-        {
-            Text = $"Received by  {AppSession.Require.FullName}", Font = Theme.Body, ForeColor = Theme.InkSoft,
-            Location = new Point(browse.Right + 24, 8), AutoSize = true
-        };
-        proof.Controls.AddRange(new Control[] { lblPhoto, _photo, browse, lblRecipient });
+        var recipient = new Label { Text = AppSession.Require.FullName };
 
-        header.Controls.Add(proof);
-        header.Controls.Add(fields);
-        header.Controls.Add(sub);
-        header.Controls.Add(title);
+        var header = UiKit.HeaderPanel(
+            UiKit.FormTitle($"{po.PoNo}  ·  {po.SupplierName}"),
+            UiKit.FormSubtitle($"Ordered {po.OrderDate:d}  ·  status {po.Status}  ·  {po.OutstandingLines} line(s) still outstanding"),
+            UiKit.FieldRow(("DR number", _drNo), ("Delivery date", _date)),
+            UiKit.FieldRow(("Delivery photo", _photo), ("", browse), ("Received by", recipient)));
 
         // ---- grid -----------------------------------------------------------
         UiKit.Bind(_grid, _rows,
@@ -128,7 +96,7 @@ public sealed class ReceiveForm : Form
 
         var minWidths = new Dictionary<string, int>
         {
-            ["MaterialCode"] = 80, ["MaterialName"] = 180, ["Unit"] = 65,
+            ["MaterialCode"] = 105, ["MaterialName"] = 200, ["Unit"] = 65,
             ["QtyOrdered"] = 95, ["QtyAlreadyReceived"] = 95, ["QtyOutstanding"] = 125,
             ["UnitPrice"] = 105, ["QtyReceivedNow"] = 125, ["LineTotal"] = 115
         };
@@ -155,7 +123,7 @@ public sealed class ReceiveForm : Form
         host.Controls.Add(_grid);
 
         // ---- footer ---------------------------------------------------------
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = 92, BackColor = Color.White, Padding = new Padding(18, 10, 18, 10) };
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 116, BackColor = Color.White, Padding = new Padding(28, 12, 28, 14) };
 
         _error.ForeColor = Theme.Danger; _error.Dock = DockStyle.Top; _error.Height = 20; _error.AutoSize = false;
         _total.Font = Theme.H2; _total.ForeColor = Theme.Ink; _total.Dock = DockStyle.Top; _total.Height = 26; _total.AutoSize = false;
